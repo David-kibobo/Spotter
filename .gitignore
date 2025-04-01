@@ -1,0 +1,35 @@
+# ========================
+# 🌐 Backend (Django)
+# ========================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+*.log
+db.sqlite3
+venv/
+env/
+.env
+config/settings/local.py
+**/migrations/*.py
+!**/migrations/__init__.py
+
+# Static and Media Files
+static/
+staticfiles/
+media/
+
+# ========================
+# 🖥️ Frontend (React)
+# ========================
+node_modules/
+npm-debug.log
+yarn.lock
+package-lock.json
+build/
+dist/
+.env.local
+.env.development
+.env.production
+.env.test
