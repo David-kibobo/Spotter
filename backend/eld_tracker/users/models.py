@@ -23,6 +23,23 @@ class MyAccountManager(BaseUserManager):
         carrier.owner = user
         carrier.save()
         return user
+    def create_driver(self, email, first_name, last_name, phone, password, carrier, license_number, truck=None):
+        """Creates a driver associated with a carrier and assigns a truck if provided."""
+        user = self.create_user(email, first_name, last_name, phone, password, carrier=carrier, role='Driver')
+        
+        # Create driver profile
+        DriverProfile.objects.create(user=user, carrier=carrier, license_number=license_number, truck=truck)
+        
+         # Send email to the driver with login credentials
+        # send_mail(
+        #     "Your Driver Account is Ready",
+        #     f"Hello {first_name},\n\nYour account has been created.\nLogin details:\nEmail: {email}\nPassword: {password}\n\nPlease change your password after logging in.",
+        #     settings.EMAIL_HOST_USER,
+        #     [email],
+        #     fail_silently=False,
+        # )
+        
+        return user
 
     def create_user(self, email, first_name, last_name, phone, password=None, carrier=None, role='Driver'):
         if not email:

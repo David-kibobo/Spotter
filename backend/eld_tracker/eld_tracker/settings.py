@@ -23,18 +23,21 @@ environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-+#i3h6iz82ab6tjj@@&5)q%13bom8zekwo8f$975s^g-9za!&0"
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Security settings
 
-ALLOWED_HOSTS = []
+SECRET_KEY = env("SECRET_KEY")
 
 
+DEBUG = env("DEBUG")
+ALLOWED_HOSTS = env("ALLOWED_HOSTS", default="localhost").split(",")
+CSRF_TRUSTED_ORIGINS = env("CSRF_TRUSTED_ORIGINS", default="http://localhost:3000").split(",")
 # Application definition
-
+CORS_ALLOW_ALL_ORIGINS = False  # Don't allow all for security
+CORS_ALLOWED_ORIGINS = CSRF_TRUSTED_ORIGINS  
+CORS_ALLOW_CREDENTIALS = True
 INSTALLED_APPS = [
+    "corsheaders",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -61,6 +64,7 @@ SIMPLE_JWT = {
 }
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",

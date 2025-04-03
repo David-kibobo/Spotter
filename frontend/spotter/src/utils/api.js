@@ -7,15 +7,18 @@ if (!baseURL) {
 
 const API = axios.create({
   baseURL: baseURL || "http://localhost:8000",
+  withCredentials: true, // ✅ Ensures cookies are sent if using session authentication
 });
 
 API.interceptors.request.use((req) => {
-  const token = localStorage.getItem("session_cookie");
+  const token = localStorage.getItem("access_token"); 
+  
   if (token) {
     req.headers.Authorization = `Bearer ${token}`;
     req.headers.Accept = "application/json";
-    req.headers["X-CSRFToken"] = getCookie("csrftoken");
   }
+ 
+
   return req;
 });
 
@@ -24,17 +27,16 @@ API.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       console.warn("Unauthorized! Logging out...");
-      localStorage.removeItem("session_cookie");
-      window.location.href = "/login";
+      
+      // ✅ Only log out if the user is actually logged in
+      const token = localStorage.getItem("access_token");
+      if (token) {
+        localStorage.removeItem("access_token");
+        window.location.reload(); // 🔄 Safer than redirecting to `/`
+      }
     }
     return Promise.reject(error);
   }
 );
-
-function getCookie(name) {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  return parts.length === 2 ? parts.pop().split(";").shift() : null;
-}
 
 export default API;

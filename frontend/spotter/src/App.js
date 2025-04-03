@@ -2,7 +2,8 @@
 import './App.css';
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import LandingPage from './pages/LandingPage';
 import Dashboard from './components/dashboard/dashboardLayout';
 import MapPage from './components/dashboard/MapPage';
@@ -11,10 +12,17 @@ import TripsPage from './components/dashboard/Trips/TripsPage';
 import SettingsPage from './components/dashboard/SettingsPage';
 import DashboardHome from './components/dashboard/Home';
 import AdminPanel from './components/dashboard/AdminPanel';
-
+import { fetchCurrentUser } from './api/endPoints';
 function App() {
 
+  const dispatch = useDispatch();
+  const { user, status } = useSelector((state) => state.auth);
 
+  useEffect(() => {
+    if (!user && status === "idle") {  // ✅ Prevents infinite re-fetching
+      dispatch(fetchCurrentUser());
+    }
+  }, [dispatch, user, status]); 
   const DashboardRoutes=()=>{
       return(
         <Routes>
