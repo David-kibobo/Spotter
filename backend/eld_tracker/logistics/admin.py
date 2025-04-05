@@ -3,7 +3,7 @@ from .models import Trip, TripLog, Load, ELDLog
 
 @admin.register(Trip)
 class TripAdmin(admin.ModelAdmin):
-    list_display = ("id", "truck", "driver", "start_location", "destination", "status", "start_time", "end_time")
+    list_display = ("id", "truck", "driver", "start_location", "destination_location", "status", "start_time", "end_time")
     list_filter = ("status", "carrier")
     search_fields = ("truck__truck_number", "driver__user__first_name", "driver__user__last_name", "start_location", "destination")
 

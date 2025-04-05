@@ -2,8 +2,11 @@ import React, { useState } from "react";
 import styled from "styled-components";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
-import CreateLoadModal from "./CreateLoadModal"; 
+import { createTrip } from "../../../api/endPoints";
+import CreateLoadModal from "./CreateLoadModal";
+import { useDispatch } from "react-redux";
 
+import { roundTo6 } from "../../../utils/helpers";
 // Custom Pin Icon
 const pinIcon = new L.Icon({
   iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
@@ -14,22 +17,23 @@ const pinIcon = new L.Icon({
 
 
 const CreateTripModal = ({ onClose, drivers, trucks }) => {
+  const dispatch=useDispatch();
   const [tripData, setTripData] = useState({
     truck: "",
     driver: "",
-    start: "",
+    start_location: "",
     start_latitude: null,
     start_longitude: null,
-    destination: "",
+    destination_location: "",
     destination_latitude: null,
     destination_longitude: null,
     estimated_distance: "",
     start_time: "",
-    end_time: "",
+    end_time: null,
     status: "scheduled",
   });
   const [showLoadModal, setShowLoadModal] = useState(false);
-  
+
   const [loadData, setLoadData] = useState(null);
 
   const [locationType, setLocationType] = useState(null); // "start" or "destination"
@@ -43,36 +47,55 @@ const CreateTripModal = ({ onClose, drivers, trucks }) => {
     setLoadData(load); // Store load data (optional, just for preview)
     console.log("New Load Added:", load);
   };
- 
+
   // Handle location selection from map
-const handleMapClick = async (e) => {
-  if (locationType) {
-    const lat = e.latlng.lat;
-    const lng = e.latlng.lng;
+  const handleMapClick = async (e) => {
+    if (locationType) {
+      const lat = e.latlng.lat;
+      const lng = e.latlng.lng;
+
+      try {
+        // Fetch address from OpenStreetMap's Nominatim API
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`
+        );
+        const data = await response.json();
+
+        // Extract the location name (display_name)
+        const locationName = data.display_name || "Unknown Location";
+
+        // Update the state with the new values
+        setTripData((prev) => ({
+          ...prev,
+          [`${locationType}_latitude`]: roundTo6(lat),
+          [`${locationType}_longitude`]:roundTo6(lng),
+          [`${locationType}_location`]: locationName, // Autofill the input field
+        }));
+      } catch (error) {
+        console.error("Error fetching location name:", error);
+      }
+    }
+  };
+
+
+  // Handle trip form submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
     try {
-      // Fetch address from OpenStreetMap's Nominatim API
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`
-      );
-      const data = await response.json();
-
-      // Extract the location name (display_name)
-      const locationName = data.display_name || "Unknown Location";
-
-      // Update the state with the new values
-      setTripData((prev) => ({
-        ...prev,
-        [`${locationType}_latitude`]: lat,
-        [`${locationType}_longitude`]: lng,
-        [`${locationType}`]: locationName, // Autofill the input field
-      }));
+      // Call the API to create a trip
+      const response = await dispatch(createTrip(tripData));
+      if (response.success) {
+        alert("Trip created successfully!");
+        onClose(); // Close the modal after successful creation
+      } else {
+        alert("Failed to create trip");
+      }
     } catch (error) {
-      console.error("Error fetching location name:", error);
+      console.error("Error creating trip:", error);
+      alert("There was an error creating the trip.");
     }
-  }
-};
-
+  };
 
   return (
     <Overlay>
@@ -82,7 +105,7 @@ const handleMapClick = async (e) => {
           <CloseButton onClick={onClose}>✖</CloseButton>
         </Header>
 
-        <Form>
+        <Form onSubmit={handleSubmit}>
           {/* Truck Selection */}
           <Label>🚛 Select Truck</Label>
           <Select name="truck" value={tripData.truck} onChange={handleInputChange}>
@@ -99,8 +122,8 @@ const handleMapClick = async (e) => {
           <Select name="driver" value={tripData.driver} onChange={handleInputChange}>
             <option value="">-- Choose Driver --</option>
             {drivers?.map((driver) => (
-              <option key={driver.id} value={driver.id}>
-                {driver.name}
+              <option key={driver.user.id} value={driver.id}>
+                {driver.user.first_name}
               </option>
             ))}
           </Select>
@@ -108,7 +131,7 @@ const handleMapClick = async (e) => {
           {/* Start Location */}
           <Label>📍 Start Location</Label>
           <InputRow>
-            <Input name="start" value={tripData.start} onChange={handleInputChange} placeholder="Enter start location..." />
+            <Input name="start_location" value={tripData.start_location || " "} onChange={handleInputChange} placeholder="Enter start location..." />
             <Button onClick={() => { setLocationType("start"); setShowMap(true); }}>📍 Pick on Map</Button>
           </InputRow>
           <InputRow>
@@ -119,7 +142,7 @@ const handleMapClick = async (e) => {
           {/* Destination */}
           <Label>📍 Destination</Label>
           <InputRow>
-            <Input name="destination" value={tripData.destination} onChange={handleInputChange} placeholder="Enter destination..." />
+            <Input name="destination_location" value={tripData.destination_location} onChange={handleInputChange} placeholder="Enter destination..." />
             <Button onClick={() => { setLocationType("destination"); setShowMap(true); }}>📍 Pick on Map</Button>
           </InputRow>
           <InputRow>
@@ -128,66 +151,66 @@ const handleMapClick = async (e) => {
           </InputRow>
 
           {/* Estimated Distance */}
-         
+
           <InputRow>
-          <Label>📏 Estimated Distance (miles)</Label>
-          <Input name="estimated_distance" type="number" value={tripData.estimated_distance} onChange={handleInputChange} />
+            <Label>📏 Estimated Distance (miles)</Label>
+            <Input name="estimated_distance" type="number" value={tripData.estimated_distance} onChange={handleInputChange} />
 
           </InputRow>
-          
+
           {/* Start & End Time */}
           <InputRow>
-          <Label>⏰ Start Time</Label>
-          <Input name="start_time" type="datetime-local" value={tripData.start_time} onChange={handleInputChange} />
+            <Label>⏰ Start Time</Label>
+            <Input name="start_time" type="datetime-local" value={tripData.start_time} onChange={handleInputChange} />
 
           </InputRow>
-         <InputRow>
-         <Label>⏳ End Time (optional)</Label>
-          <Input name="end_time" type="datetime-local" value={tripData.end_time} onChange={handleInputChange} />
+          <InputRow>
+            <Label>⏳ End Time (optional)</Label>
+            <Input name="end_time" type="datetime-local" value={tripData.end_time} onChange={handleInputChange} />
 
-         </InputRow>
+          </InputRow>
 
-         {/* Create Load Button
+          {/* Create Load Button
          <ButtonInputRow>
          <CreateLoadButton onClick={() => setShowLoadModal(true)}>➕ Add Load</CreateLoadButton>
                   </ButtonInputRow>
          */}
-         
+
           {/* Status */}
-         
+
           <Label>📌 Trip Status</Label>
           <Select name="status" value={tripData.status} onChange={handleInputChange}>
             <option value="scheduled">Scheduled</option>
             <option value="ongoing">Ongoing</option>
             <option value="completed">Completed</option>
           </Select>
-         
-          
+
+
 
           {/* Submit Button */}
-          <SubmitButton>✅ Create Trip</SubmitButton>
+          <SubmitButton type="submit" > ✅ Create Trip</SubmitButton>
         </Form>
 
-         {/* Load Modal
+        {/* Load Modal
          {showLoadModal && <CreateLoadModal tripId="TEMP_TRIP_ID" onClose={() => setShowLoadModal(false)} onCreateLoad={handleCreateLoad} />} */}
-       
+
         {/* Map Modal */}
-{showMap && (
-  <MapOverlay>
-    <MapContainer center={[37.7749, -122.4194]} zoom={4} style={{ height: "400px", width: "600px", borderRadius: "8px" }}>
-      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-      <LocationMarker onClick={handleMapClick} />
-      {/* Pin marker */}
-      {tripData.start_latitude && tripData.start_longitude && (
-        <Marker position={[tripData.start_latitude, tripData.start_longitude]} icon={pinIcon} />
-      )}
-      {tripData.destination_latitude && tripData.destination_longitude && (
-        <Marker position={[tripData.destination_latitude, tripData.destination_longitude]} icon={pinIcon} />
-      )}
-    </MapContainer>
-    <CloseMapButton onClick={() => setShowMap(false)}>✖ Close Map</CloseMapButton>
-  </MapOverlay>
-)}
+        {showMap && (
+          <MapOverlay>
+            <MapContainer center={[37.7749, -122.4194]} zoom={4} style={{ height: "400px", width: "600px", borderRadius: "8px" }}>
+              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              <LocationMarker onClick={handleMapClick} />
+              {/* Pin marker */}
+              {tripData.start_latitude && tripData.start_longitude && (
+                <Marker position={[tripData.start_latitude, tripData.start_longitude]} icon={pinIcon} />
+              )}
+              {tripData.destination_latitude && tripData.destination_longitude && (
+                <Marker position={[tripData.destination_latitude, tripData.destination_longitude]} icon={pinIcon} />
+              )}
+            </MapContainer>
+            <CloseMapButton onClick={() => setShowMap(false)}>✖ Close Map</CloseMapButton>
+          </MapOverlay>
+        )}
 
       </ModalContainer>
     </Overlay>
@@ -253,7 +276,7 @@ const CreateLoadButton = styled.button`
   margin-bottom: 15px;  /* Added spacing below */
 `;
 
-const Form = styled.div`
+const Form = styled.form`
   flex-grow: 1;
   overflow-y: auto;
   padding-right: 10px;

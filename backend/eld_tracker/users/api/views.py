@@ -1,4 +1,5 @@
 from rest_framework.views import APIView
+from uuid import UUID
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import get_user_model
@@ -69,6 +70,40 @@ class DriverListView(APIView):
         serializer = DriverListSerializer(drivers, many=True)
 
         return success_response(message= "Drivers retrieved successfully", data=serializer.data)
+class DriverUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, driver_id):
+        user = request.user
+        if user.role != "Carrier":
+            return error_response(message="Only carriers can update drivers", status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            driver_profile = DriverProfile.objects.get(user=driver_id, carrier=user.carrier)
+        except DriverProfile.DoesNotExist:
+            return error_response(message="Driver not found")
+
+        driver = driver_profile.user
+        data = request.data
+
+        # Update user fields
+        driver.email = data.get("email", driver.email)
+        driver.first_name = data.get("first_name", driver.first_name)
+        driver.last_name = data.get("last_name", driver.last_name)
+        driver.phone = data.get("phone", driver.phone)
+
+        # Update password if provided
+        if data.get("password"):
+            driver.set_password(data["password"])
+        driver.save()
+
+        # Update profile fields
+        driver_profile.license_number = data.get("license_number", driver_profile.license_number)
+        driver_profile.truck_id = data.get("truck") or None
+        driver_profile.save()
+
+        return success_response(message="Driver updated successfully")
+    
 # Login View
 class LoginView(APIView):
     permission_classes = [AllowAny]

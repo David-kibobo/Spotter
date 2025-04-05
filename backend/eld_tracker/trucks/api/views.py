@@ -52,7 +52,9 @@ class TruckDetailAPIView(APIView):
         truck = self.get_object(pk)
         if truck is None:
             return error_response("Truck not found", status=status.HTTP_404_NOT_FOUND)
-
+        user=request.user
+        data=request.data
+        data['carrier']= str(user.carrier.id)
         serializer = TruckSerializer(truck, data=request.data)
         response = validate_serializer(serializer)
         if serializer.is_valid():

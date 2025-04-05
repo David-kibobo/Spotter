@@ -1,5 +1,7 @@
 from rest_framework import serializers
-from .models import Trip, TripLog, Load, ELDLog
+from logistics.models import Trip, TripLog, Load, ELDLog
+from users.api.serializers import UserSerializer, DriverListSerializer
+from trucks.api.serializers import TruckSerializer
 from utils.validators import (
     validate_fueling_requirement, 
     validate_hos_rules, 
@@ -7,6 +9,8 @@ from utils.validators import (
 )
 
 class TripSerializer(serializers.ModelSerializer):
+    driver_data = DriverListSerializer(source="driver", read_only=True)
+    truck_data = TruckSerializer(source="truck", read_only=True)
     class Meta:
         model = Trip
         fields = "__all__"

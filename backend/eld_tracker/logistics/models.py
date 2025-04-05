@@ -39,7 +39,7 @@ class Trip(models.Model):
     start_location = models.CharField(max_length=255)  # Store address or city name
     start_latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     start_longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
-    destination = models.CharField(max_length=255)  # Store address or city name
+    destination_location = models.CharField(max_length=255)  # Store address or city name
     destination_latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     destination_longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     estimated_distance = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True, help_text="Estimated miles")
@@ -47,6 +47,7 @@ class Trip(models.Model):
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=TRIP_STATUS_CHOICES, default="scheduled")
+    has_load=models.BooleanField(default =False)
 
     def __str__(self):
         return f"{self.truck.truck_number} - {self.start_location} to {self.destination}"
@@ -66,20 +67,28 @@ class TripLog(models.Model):
 class Load(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name="loads")
-    description = models.TextField()
+
+    description = models.TextField(help_text="Brief load description")
+    commodity = models.CharField(max_length=100, blank=True, null=True)
+    shipper = models.CharField(max_length=100, blank=True, null =True )
     weight = models.DecimalField(max_digits=6, decimal_places=2, help_text="Weight in tons")
+
     pickup_location = models.CharField(max_length=255)
     pickup_latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     pickup_longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+
     delivery_location = models.CharField(max_length=255)
     delivery_latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     delivery_longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+
     pickup_time = models.DateTimeField()
     delivery_time = models.DateTimeField(null=True, blank=True)
+
     status = models.CharField(max_length=20, choices=LOAD_STATUS_CHOICES, default="pending")
 
     def __str__(self):
-       return f"{self.shipper_name} - {self.pickup_location} to {self.dropoff_location}"
+        return f"{self.pickup_location} to {self.delivery_location}"
+
 class ELDLog(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     driver = models.ForeignKey(DriverProfile, on_delete=models.CASCADE, related_name="eld_logs")

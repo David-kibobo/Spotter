@@ -7,21 +7,11 @@ from utils.common import get_object_or_error
 from utils.validators import validate_serializer, validate_hos_rules, validate_8_hour_rule
 from utils.responses import success_response, error_response
 
-
+# Trip API View for listing, creating, and updating trips
 class TripAPIView(APIView):
-    """
-    API for managing trips.
-    - GET (list/detail)
-    - POST (create)
-    - PATCH (update)
-    """
-
     def get(self, request, trip_id=None):
         if trip_id:
             trip = get_object_or_error(Trip, id=trip_id)
-            # if isinstance(trip, Response):  # Handle Not Found
-            #     return trip
-
             serializer = TripSerializer(trip)
             return success_response("Trip retrieved successfully", serializer.data)
 
@@ -30,29 +20,27 @@ class TripAPIView(APIView):
         return success_response("Trips retrieved successfully", serializer.data)
 
     def post(self, request):
-        serializer = TripSerializer(data=request.data)
+        user=self.request.user
+        data=request.data 
+        data['carrier']=user.carrier.id
         
+        serializer = TripSerializer(data=request.data)
         error_response_data = validate_serializer(serializer)
         if error_response_data:
-            return error_response_data  # Returns formatted errors
+            return error_response_data
         
         serializer.save()
-        return success_response("Trip created successfully", serializer.data, status.HTTP_201_CREATED)
+        return success_response("Trip created successfully", serializer.data)
 
     def patch(self, request, trip_id):
         trip = get_object_or_error(Trip, id=trip_id)
-        # if isinstance(trip, Response):  # Handle Not Found
-        #     return trip
-
         serializer = TripSerializer(trip, data=request.data, partial=True)
-        
         error_response_data = validate_serializer(serializer)
         if error_response_data:
             return error_response_data
         
         serializer.save()
         return success_response("Trip updated successfully", serializer.data)
-
 
 class ActiveTripListAPIView(APIView):
     """
@@ -147,7 +135,7 @@ class ELDLogListCreateAPIView(APIView):
         serializer = ELDLogSerializer(data=request.data)
         error_response_data = validate_serializer(serializer)  # Capture serializer errors
         if error_response_data:
-            return error_response(error_response_data, status.HTTP_400_BAD_REQUEST)
+            return error_response(error_response_data)
         if serializer.is_valid():
             driver = serializer.validated_data["driver"]
             new_status = serializer.validated_data["hos_status"]
@@ -220,8 +208,7 @@ class LoadListCreateAPIView(APIView):
         - If `trip_id` is provided, filter loads for that trip.
         """
         if trip_id:
-            trip = get_object_or_error(Trip, id=trip_id)
-            loads = Load.objects.filter(trip=trip)
+            loads = Load.objects.filter(trip_id=trip_id)
             if not loads.exists():
                 return error_response("No loads found for the specified trip.", status.HTTP_404_NOT_FOUND)
         else:
@@ -232,19 +219,28 @@ class LoadListCreateAPIView(APIView):
         serializer = LoadSerializer(loads, many=True)
         return success_response("Loads retrieved successfully.", serializer.data)
 
-    def post(self, request):
+    def post(self, request, trip_id):
         """
         Create a new load.
         """
-        serializer = LoadSerializer(data=request.data)
+        print("My data:",request.data)
+        data=request.data
+        data['trip']=trip_id
+        trip=Trip.objects.get(id=trip_id)
+        serializer = LoadSerializer(data=data)
+        
         error_response_data = validate_serializer(serializer)
         if error_response_data:
-            return error_response(error_response_data, status.HTTP_400_BAD_REQUEST)
+            return error_response_data
 
-        serializer.save()
+        # Save the load instance
+        load = serializer.save()
+        trip.has_load=True
+        trip.save()
+        
+
+        # Return success response with serialized load data
         return success_response("Load created successfully.", serializer.data, status.HTTP_201_CREATED)
-
-
 class LoadDetailAPIView(APIView):
     """
     API for retrieving, updating, and deleting a specific load.

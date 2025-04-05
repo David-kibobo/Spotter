@@ -35,11 +35,16 @@ const trucksSlice = createSlice({
             })
             // Update Truck
             .addCase(updateTruck.fulfilled, (state, action) => {
-                const index = state.trucks.findIndex((truck) => truck.id === action.payload.id);
-                if (index !== -1) {
+                if (Array.isArray(state.trucks)) {
+                  const index = state.trucks.findIndex((truck) => truck.id === action.payload.id);
+                  if (index !== -1) {
                     state.trucks[index] = action.payload;
+                  }
+                } else {
+                  console.error("Expected 'state.trucks' to be an array.");
                 }
-            })
+              })
+              
             // Delete Truck
             .addCase(deleteTruck.fulfilled, (state, action) => {
                 state.trucks = state.trucks.filter((truck) => truck.id !== action.payload);

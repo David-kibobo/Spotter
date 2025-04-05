@@ -13,3 +13,4 @@ export const formatDate = (date) => {
     return str.charAt(0).toUpperCase() + str.slice(1);
   };
   
+  export const roundTo6 = (num) => Math.round(num * 1e6) / 1e6;

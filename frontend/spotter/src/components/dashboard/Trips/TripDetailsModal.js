@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import CreateLoadModal from "./CreateLoadModal"; // Import the modal
+import { fetchLoads } from "../../../api/endPoints";
+import { useDispatch, useSelector } from "react-redux";
 
 const TripDetailsModal = ({ trip, onClose, onCreateLoad }) => {
+  const dispatch=useDispatch()
+   useEffect(()=>{dispatch(fetchLoads())}, [dispatch])
   const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
-  const [loads, setLoads] = useState([]);
+ const loads=useSelector((state)=> state.loads?.loads?.data ?? [])
+ console.log('My loads:', loads)
 
   // Fetch Loads when Modal Opens
 //   useEffect(() => {
@@ -31,9 +36,10 @@ const TripDetailsModal = ({ trip, onClose, onCreateLoad }) => {
 
         {/* Trip Info */}
         <TripInfo>
-          <p><strong>🚚 Truck:</strong> {trip.truck}</p>
-          <p><strong>👤 Driver:</strong> {trip.driver}</p>
-          <p><strong>📍 From:</strong> {trip.start_location} ➝ <strong>To:</strong> {trip.destination}</p>
+          <p><strong>🚚 Truck:</strong> {trip.truck_data?.truck_number}</p>
+          <p><strong>👤 Driver:</strong> {trip.driver_data?.user.first_name} {trip.driver_data?.user.last_name}</p>
+
+          <p><strong>📍 From:</strong> {trip.start_location} ➝ <strong>To:</strong> {trip.destination_location}</p>
           <p><strong>📏 Distance:</strong> {trip.estimated_distance} miles</p>
         </TripInfo>
 

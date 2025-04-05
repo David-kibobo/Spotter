@@ -297,32 +297,44 @@
 //   margin-top: 10px;
 // `;
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import CreateTripModal from "./CreateTripModal";
 import TripDetailsModal from "./TripDetailsModal";
+import { fetchDrivers, fetchTrucks, fetchTrips } from "../../../api/endPoints";
+import { useDispatch, useSelector } from "react-redux";
 
 const TripsPage = () => {
+
+  const dispatch = useDispatch();
+    useEffect(() => {
+      dispatch(fetchTrips());
+      dispatch(fetchDrivers());
+      dispatch(fetchTrucks());
+    }, [dispatch]);
   const [selectedTab, setSelectedTab] = useState("default");
   const [isCreateTripModalOpen, setIsCreateTripModalOpen] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState(null);
 
-  const trips = [
-    { 
-      id: 1, truck: "Volvo 123", driver: "John Doe", 
-      start_location: "New York", destination: "Chicago", 
-      estimated_distance: 800, actual_distance: null, 
-      start_time: "2025-04-10 08:00", end_time: null, 
-      status: "upcoming", hasLoad: false // 🚨 No load assigned
-    },
-    { 
-      id: 2, truck: "Kenworth 456", driver: "Jane Smith", 
-      start_location: "Los Angeles", destination: "Houston", 
-      estimated_distance: 1500, actual_distance: 1400, 
-      start_time: "2025-04-08 06:00", end_time: "2025-04-10 18:00", 
-      status: "completed", hasLoad: true
-    },
-  ];
+  const drivers = useSelector((state) => state.drivers?.drivers?.data ?? []);
+  const trucks = useSelector((state) => state.trucks?.trucks?.data ?? []);
+  const trips =useSelector((state)=>state.trips?.trips?.data?? [])
+  // const trips = [
+  //   { 
+  //     id: 1, truck: "Volvo 123", driver: "John Doe", 
+  //     start_location: "New York", destination: "Chicago", 
+  //     estimated_distance: 800, actual_distance: null, 
+  //     start_time: "2025-04-10 08:00", end_time: null, 
+  //     status: "upcoming", hasLoad: false // 🚨 No load assigned
+  //   },
+  //   { 
+  //     id: 2, truck: "Kenworth 456", driver: "Jane Smith", 
+  //     start_location: "Los Angeles", destination: "Houston", 
+  //     estimated_distance: 1500, actual_distance: 1400, 
+  //     start_time: "2025-04-08 06:00", end_time: "2025-04-10 18:00", 
+  //     status: "completed", hasLoad: true
+  //   },
+  // ];
 
   const filteredTrips = selectedTab === "default" ? trips : trips.filter(trip => trip.status === selectedTab);
 
@@ -331,7 +343,7 @@ const TripsPage = () => {
       <Sidebar>
         <h2>📌 Trips</h2>
         <NavButton onClick={() => setSelectedTab("default")}>📋 All Trips</NavButton>
-        <NavButton onClick={() => setSelectedTab("upcoming")}>🟢 Upcoming Trips</NavButton>
+        <NavButton onClick={() => setSelectedTab("scheduled")}>🟢 Upcoming Trips</NavButton>
         <NavButton onClick={() => setSelectedTab("ongoing")}>🟡 Ongoing Trips</NavButton>
         <NavButton onClick={() => setSelectedTab("completed")}>🔵 Completed Trips</NavButton>
       </Sidebar>
@@ -346,11 +358,26 @@ const TripsPage = () => {
           <DefaultMessage>
             <h3>Welcome to Trips Management</h3>
             <p>Select a trip type to view details or create a new trip.</p>
+
+            {filteredTrips.length > 0 ? (
+              filteredTrips.map(trip => (
+                <TripCard key={trip.id} onClick={() => setSelectedTrip(trip)}>
+                  <div>
+                    <p><strong>{trip.start_location}</strong> ➝ <strong>{trip.destination_location}</strong></p>
+                    <span>📅 {trip.start_time}</span>
+                  </div>
+                  {/* 🚨 Show load status */}
+                  {!trip.has_load && <Warning>No Load Assigned ⚠</Warning>}
+                </TripCard>
+              ))
+            ) : (
+              <NoTrips>No trips found in this category.</NoTrips>
+            )}
           </DefaultMessage>
         ) : (
           <TripSection>
             <h3>
-              {selectedTab === "upcoming" && "🟢 Upcoming Trips"}
+              {selectedTab === "scheduled" && "🟢 Upcoming Trips"}
               {selectedTab === "ongoing" && "🟡 Ongoing Trips"}
               {selectedTab === "completed" && "🔵 Completed Trips"}
             </h3>
@@ -358,11 +385,11 @@ const TripsPage = () => {
               filteredTrips.map(trip => (
                 <TripCard key={trip.id} onClick={() => setSelectedTrip(trip)}>
                   <div>
-                    <p><strong>{trip.start_location}</strong> ➝ <strong>{trip.destination}</strong></p>
+                    <p><strong>{trip.start_location}</strong> ➝ <strong>{trip.destination_location}</strong></p>
                     <span>📅 {trip.start_time}</span>
                   </div>
                   {/* 🚨 Show load status */}
-                  {!trip.hasLoad && <Warning>No Load Assigned ⚠</Warning>}
+                  {!trip.has_load && <Warning>No Load Assigned ⚠</Warning>}
                 </TripCard>
               ))
             ) : (
@@ -372,7 +399,7 @@ const TripsPage = () => {
         )}
       </MainPanel>
 
-      {isCreateTripModalOpen && <CreateTripModal onClose={() => setIsCreateTripModalOpen(false)} />}
+      {isCreateTripModalOpen && <CreateTripModal onClose={() => setIsCreateTripModalOpen(false)} drivers={drivers} trucks={trucks}/>}
       {selectedTrip && <TripDetailsModal trip={selectedTrip} onClose={() => setSelectedTrip(null)} />}
     </Container>
   );
