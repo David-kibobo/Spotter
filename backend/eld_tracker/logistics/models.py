@@ -94,6 +94,7 @@ class ELDLog(models.Model):
     driver = models.ForeignKey(DriverProfile, on_delete=models.CASCADE, related_name="eld_logs")
     trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name="eld_logs", null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)  # Log entry time
+    endtime = models.DateTimeField(null=True, blank=True) #log endtime
     hos_status = models.CharField(max_length=20, choices=HOS_STATUS_CHOICES)
 
     # Location Tracking

@@ -14,7 +14,7 @@ urlpatterns = [
     # ELDLog API Endpoints
     path('eld-logs/', ELDLogListCreateAPIView.as_view(), name='eld-log-list-create'),
     path('eld-logs/<uuid:log_id>/', ELDLogDetailAPIView.as_view(), name='eld-log-detail'),
-    path('eld-logs/driver/<uuid:driver_id>/', ELDLogListCreateAPIView.as_view(), name='eld-log-driver'),
+    path('eld-logs/driver/<int:driver_id>/', ELDLogListCreateAPIView.as_view(), name='eld-log-driver'),
     path('eld-logs/trip/<uuid:trip_id>/', ELDLogListCreateAPIView.as_view(), name='eld-log-trip'),
 
     # Load API Endpoints

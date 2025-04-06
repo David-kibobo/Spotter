@@ -20,13 +20,26 @@ class CarrierSignupSerializer(serializers.Serializer):
             raise serializers.ValidationError("A user with this email already exists.")
         return value
 
+# serializers.py
 
-# User Serializer
+class CarrierSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Carrier  
+        fields = ['id', 'name', 'address',]  
+
+# serializers.py
+
 class UserSerializer(serializers.ModelSerializer):
+    carrier_data = CarrierSerializer(source='carrier', read_only=True)  # Nested CarrierSerializer
+    driver_profile_id = serializers.SerializerMethodField()  
     class Meta:
         model = User
-        fields = ('id', 'email', 'first_name', 'last_name', 'phone', 'role', 'carrier')
+        fields = ('id', 'email', 'first_name', 'last_name', 'phone', 'role', 'carrier', 'carrier_data','driver_profile_id')  # Include 'carrier_data'
 
+    def get_driver_profile_id(self, obj):
+        if obj.role == "Driver" and hasattr(obj, "driver"):
+            return obj.driver.id
+        return None
 # Driver creation serializer
 class DriverSignupSerializer(serializers.Serializer):
     email = serializers.EmailField()

@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from django.utils import timezone
 from ..models import Trip, TripLog,ELDLog, Trip, DriverProfile, Load
 from .serializers import TripSerializer, TripLogSerializer, ELDLogSerializer, LoadSerializer
 from utils.common import get_object_or_error
@@ -72,8 +73,7 @@ class TripLogListCreateAPIView(APIView):
         #     return trip
 
         data = request.data.copy()
-        data["trip"] = trip.id  # Assign trip ID
-
+        data["trip"] = trip.id  
         serializer = TripLogSerializer(data=data)
         
         error_response_data = validate_serializer(serializer)
@@ -106,10 +106,17 @@ class ELDLogListCreateAPIView(APIView):
     API to list all ELD logs and allow manual creation of new logs.
     """
     
+    
+class ELDLogListCreateAPIView(APIView):
+    """
+    API to list all ELD logs and allow manual creation of new logs.
+    """
+
     def get(self, request, driver_id=None, trip_id=None):
         """
         Retrieve all ELD logs for a specific driver or trip.
         """
+        carrier = request.user.carrier
         if driver_id:
             driver = get_object_or_error(DriverProfile, id=driver_id)
             logs = ELDLog.objects.filter(driver=driver).order_by("-timestamp")
@@ -121,13 +128,13 @@ class ELDLogListCreateAPIView(APIView):
             if not logs.exists():
                 return error_response("No logs found for the specified trip", status.HTTP_404_NOT_FOUND)
         else:
-            logs = ELDLog.objects.all().order_by("-timestamp")
+            logs = ELDLog.objects.filter(driver__carrier=carrier).order_by("-timestamp")
             if not logs.exists():
                 return error_response("No logs have been created yet", status.HTTP_404_NOT_FOUND)
 
         serializer = ELDLogSerializer(logs, many=True)
         return success_response("ELD logs retrieved successfully.", serializer.data)
-    
+
     def post(self, request):
         """
         Allow drivers to manually create an ELD log entry.
@@ -135,7 +142,8 @@ class ELDLogListCreateAPIView(APIView):
         serializer = ELDLogSerializer(data=request.data)
         error_response_data = validate_serializer(serializer)  # Capture serializer errors
         if error_response_data:
-            return error_response(error_response_data)
+            return error_response_data
+        
         if serializer.is_valid():
             driver = serializer.validated_data["driver"]
             new_status = serializer.validated_data["hos_status"]
@@ -151,9 +159,19 @@ class ELDLogListCreateAPIView(APIView):
             if hos_error:
                 return error_response(hos_error, status.HTTP_400_BAD_REQUEST)
 
-            serializer.save()
+            # ✅ Step 3: Check if the previous log exists with an open status
+            previous_log = ELDLog.objects.filter(driver=driver, endtime=None).last()
+
+            if previous_log:
+                # Close the previous log by setting endtime to the current time
+                previous_log.endtime = timezone.now()
+                previous_log.save()
+
+            # ✅ Step 4: Create the new log entry with the new status
+            serializer.save()  
             return success_response("ELD log created successfully.", serializer.data, status.HTTP_201_CREATED)
-        
+
+        return error_response("Failed to create ELD log.", status.HTTP_400_BAD_REQUEST)
         
 class ELDLogDetailAPIView(APIView):
     """

@@ -8,14 +8,15 @@ const Dashboard = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const dispatch = useDispatch();
     const { user, status } = useSelector((state) => state.auth);
-  
+
+  console.log("Current USer:", user)
     useEffect(() => {
       if (!user && status === "idle") {  // ✅ Prevents infinite re-fetching
         dispatch(fetchCurrentUser());
       }
     }, [dispatch, user, status]); 
  
-
+const eldLogsPath = user?.role === "Driver" ? "eld-logs/driver" : "eld-logs/carrier";
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -37,7 +38,7 @@ const Dashboard = () => {
         <NavItem as={Link} to="view-map" isCollapsed={isCollapsed}>
           📍 {isCollapsed ? "" : "Map"}
         </NavItem>
-        <NavItem as={Link} to="eld-logs" isCollapsed={isCollapsed}>
+        <NavItem as={Link} to={eldLogsPath} isCollapsed={isCollapsed}>
           📄 {isCollapsed ? "" : "ELD Logs"}
         </NavItem>
         <NavItem as={Link} to="trips" isCollapsed={isCollapsed}>

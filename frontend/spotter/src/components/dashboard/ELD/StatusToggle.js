@@ -1,53 +1,71 @@
 import styled, { keyframes, css } from "styled-components";
-import { useState } from "react";
+import { canChangeStatus } from "../../../utils/helpers";
+import { toast } from "react-toastify";
 
-// Blinking Animation
 const blink = keyframes`
   0% { opacity: 1; }
   50% { opacity: 0.5; }
   100% { opacity: 1; }
 `;
 
-// Status Data
 const statuses = [
-  { label: "Driving", color: "#4CAF50", icon: "🟢" }, // Green
-  { label: "On-Duty", color: "#2196F3", icon: "🔵" }, // Blue
-  { label: "Off-Duty", color: "#f0f0f0", icon: "⚪", blinkColor: "#ddd", textColor: "#222" }, // Light Gray Blink
-  { label: "Sleeper Berth", color: "#8E44AD", icon: "🛏️" }, // Purple
+  { label: "driving", color: "#4CAF50", icon: "🟢" },
+  { label: "on_duty", color: "#2196F3", icon: "🔵" },
+  { label: "off_duty", color: "#f0f0f0", icon: "⚪", blinkColor: "#ddd", textColor: "#222" },
+  { label: "sleeper_berth", color: "#8E44AD", icon: "🛏️" },
 ];
 
-const StatusToggle = () => {
-  const [activeStatus, setActiveStatus] = useState(null);
-
+const StatusToggle = ({ onStatusChange, activeStatus, hosStats }) => {
   const handleToggle = (status) => {
-    setActiveStatus(status === activeStatus ? null : status);
+    const isAllowed = canChangeStatus(status, activeStatus, hosStats);
+
+    if (!isAllowed) {
+      toast.warn("You can't switch to this status due to HOS rules.");
+      return;
+    }
+
+    if (status !== activeStatus) {
+      onStatusChange(status);
+    }
   };
+
+
 
   return (
     <StatusContainer>
-      {statuses.map(({ label, color, icon, blinkColor, textColor }) => (
-        <StatusButton
-          key={label}
-          isActive={activeStatus === label}
-          color={color}
-          blinkColor={blinkColor || color} // Default to the same color if not specified
-          textColor={textColor || "white"} // Default white text
-          onClick={() => handleToggle(label)}
-        >
-          {icon} {label}
-        </StatusButton>
-      ))}
+      {statuses.map(({ label, color, icon, blinkColor, textColor }) => {
+        const isDisabled = !canChangeStatus(label, activeStatus, hosStats);
+        return (
+          <StatusButton
+            key={label}
+            isActive={activeStatus === label}
+            color={color}
+            blinkColor={blinkColor || color}
+            textColor={textColor || "white"}
+            onClick={() => handleToggle(label)}
+            disabled={isDisabled}
+            title={
+              isDisabled
+                ? `Can't switch to "${label}" – violates HOS rules.`
+                : `Switch to ${label}`
+            }
+          >
+            {icon} {label}
+          </StatusButton>
+
+        );
+      })}
     </StatusContainer>
   );
 };
 
-// Styled Components
+
 const StatusContainer = styled.div`
   display: flex;
-  flex-direction: row; /* FIXED: Horizontal Layout */
+  flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 8px; /* Space between buttons */
+  gap: 8px;
   background: #222;
   padding: 10px;
   border-radius: 10px;
@@ -61,21 +79,17 @@ const StatusButton = styled.button`
   background: ${({ color, isActive }) => (isActive ? color : "#555")};
   border: none;
   border-radius: 20px;
-  cursor: pointer;
+  
+  cursor: ${({ disabled }) => (disabled ? "not-allowed" : "pointer")};
   transition: transform 0.2s ease, background 0.2s ease;
   position: relative;
-
-  /* Moves active status UP, inactive status stays flat */
   transform: ${({ isActive }) => (isActive ? "translateY(-5px)" : "translateY(0)")};
-
-  /* Blinking effect when active */
   ${({ isActive, blinkColor }) =>
     isActive &&
     css`
       animation: ${blink} 1s infinite;
-      background: ${blinkColor}; /* Use modified blink color */
+      background: ${blinkColor};
     `}
-
   &:hover {
     opacity: 0.8;
   }

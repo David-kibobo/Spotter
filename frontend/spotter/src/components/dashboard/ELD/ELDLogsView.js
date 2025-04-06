@@ -1,68 +1,45 @@
-import React, { useState, useEffect } from "react";
+// components/eldLogs/ELDLogsView.jsx
+import React from "react";
 import styled from "styled-components";
 import ELDGraph from "./ELDGraph";
 import PrintableELDLog from "./ELDdocument";
-import StatusToggle from "./StatusToggle"
-import { useDispatch, useSelector } from "react-redux";
-import { fetchELDLogsByDriver } from "../../../api/endPoints";
+import StatusToggle from "./StatusToggle";
+import { transformLogData } from "../../../utils/helpers";
+const ELDLogsView = ({ driver, logs, currentStatus, setIsPrintModalOpen, isPrintModalOpen, hosStats }) => {
+  // Calculate total hours for each status (mock for now)
 
-const ELDLogs = () => {
-  const dispatch = useDispatch();
-  const { logs, loading, error } = useSelector(state => state.eldLogs);
-  const [currentStatus, setCurrentStatus] = useState("Off-Duty");
-  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
-
-
-  const driver = {
-    name: "John Doe",
-    coDriver: "Jane Smith", // Added co-driver
-    truckNumber: "#1023",
-    carrier: "ABC Logistics",
-    carrierAddress: "123 Freight Lane, Dallas, TX", // Added carrier address
-    totalMiles: 450, // Added total miles covered
-  };
-
-  const staticLogs = [
-    { time: "12:00 AM", status: "⚪ Off-Duty", duration: "6h", remarks: "Resting at Truck Stop" },
-    { time: "06:00 AM", status: "🔵 On-Duty", duration: "30m", remarks: "Pre-trip Inspection" },
-    { time: "06:30 AM", status: "🟢 Driving", duration: "4h", remarks: "Route 66" },
-    { time: "10:30 AM", status: "⚪ Off-Duty", duration: "30m", remarks: "Breakfast Stop" },
-    { time: "11:00 AM", status: "🟢 Driving", duration: "3h", remarks: "Interstate 35" },
-    { time: "02:00 PM", status: "🔵 On-Duty", duration: "1h", remarks: "Loading at Warehouse" },
-    { time: "03:00 PM", status: "🟢 Driving", duration: "2h", remarks: "Delivering Goods" },
-    { time: "05:00 PM", status: "🔵 On-Duty", duration: "1h", remarks: "Unloading Freight" },
-    { time: "06:00 PM", status: "⚪ Off-Duty", duration: "6h", remarks: "Resting at Motel" },
-  ];
-  
-  // Calculate total hours for each status
+  const transformedData=transformLogData(logs)
   const totalTime = {
     "🟢 Driving": 9,
     "🔵 On-Duty": 2.5,
     "⚪ Off-Duty": 12.5,
-  };
-  
-  
- 
- 
-  
 
+  };
+//   / Handle status change from StatusToggle (could be passed down as a prop)
+//   const handleStatusChange = (newStatus) => {
+//     setCurrentStatus(newStatus);
+//     // Prepare the log data
+//     const logData = {
+//       driver: driverId,
+//       hos_status: newStatus.toLowerCase(), // ensure matching backend format
+//       // Include additional fields like location, remarks, etc. as needed
+//     };
+//     dispatch(createEldLog(logData));
+//   };
   return (
     <Container>
-      {/* Left Panel */}
       <LeftPanel>
         <div>
           <h3>Driver Info</h3>
-          <p><strong>🚛 Truck:</strong> {driver.truckNumber}</p>
+          <p><strong>🚛 Truck:</strong> {driver?.truckNumber}</p>
           <p><strong>🚚 Trailer:</strong> #A230</p>
-          <p><strong>👤 Name:</strong> {driver.name}</p>
-          <p><strong>👥 Co-Driver:</strong> {driver.coDriver || "None"}</p>
+          <p><strong>👤 Name:</strong> {driver?.name}</p>
+          <p><strong>👥 Co-Driver:</strong> {driver?.coDriver || "None"}</p>
           <p><strong>📍 Current Status:</strong> {currentStatus}</p>
-          <p><strong>🏢 Carrier:</strong> {driver.carrier}</p>
-          <p><strong>📍 Carrier Address:</strong> {driver.carrierAddress}</p>
-          <p><strong>🛣️ Total Miles Today:</strong> {driver.totalMiles} mi</p>
-        </div> 
-        
-        {/* Shipping Documents */}
+          <p><strong>🏢 Carrier:</strong> {driver?.carrier}</p>
+          <p><strong>📍 Carrier Address:</strong> {driver?.carrierAddress}</p>
+          <p><strong>🛣️ Total Miles Today:</strong> {driver?.totalMiles} mi</p>
+        </div>
         <ShippingSection>
           <h3>📦 Shipping Info</h3>
           <p><strong>📄 BOL / Manifest No.:</strong> #45678</p>
@@ -70,7 +47,6 @@ const ELDLogs = () => {
         </ShippingSection>
       </LeftPanel>
 
-      {/* Main Section */}
       <MainSection>
         <Header>
           <h2>📄 ELD Logs</h2>
@@ -80,16 +56,13 @@ const ELDLogs = () => {
           </div>
         </Header>
 
-        {/* Graph */}
         <GraphContainer>
           <ELDGraph />
         </GraphContainer>
 
-        {/* Log Entries */}
         <LogEntries>
-        <h3 style={{ marginTop: "20px" }}>Today's Log Entries</h3>
-
-          {staticLogs.map((entry, index) => (
+          <h3>Today's Log Entries</h3>
+          {transformedData?.map((entry, index) => (
             <LogItem key={index}>
               <span>{entry.time}</span>
               <span>{entry.status}</span>
@@ -99,33 +72,28 @@ const ELDLogs = () => {
           ))}
         </LogEntries>
 
-        {/* Status Update Buttons */}
-        <StatusToggle />
-
+        {/* <StatusToggle /> */}
       </MainSection>
 
-      {/* Right Panel */}
       <RightPanel>
         <h3>HOS Recap</h3>
-        <p><strong>🕒 Total On-Duty Today:</strong> {totalTime["🔵 On-Duty"]}h</p>
-        <p><strong>🚛 Total Driving Time:</strong> {totalTime["🟢 Driving"]}h</p>
-        <p><strong>⚪ Total Off-Duty Time:</strong> {totalTime["⚪ Off-Duty"]}h</p>
-        <p><strong>📅 Last 7 Days:</strong> 63h (7h remaining)</p>
-        <p><strong>⏳ Available Tomorrow:</strong> 10h 30m</p>
+        <p><strong>🕒 Total On-Duty Today:</strong> {hosStats.totalToday}h</p>
+        <p><strong>🚛 Total Driving Time:</strong> {hosStats.totalLast7Days - hosStats.totalToday}h</p>
+        <p><strong>⚪ Total Off-Duty Time:</strong> {hosStats.totalLast7Days - hosStats.totalToday - hosStats.totalToday}h</p>
+        <p><strong>📅 Last 7 Days:</strong> {hosStats.totalLast7Days}h</p>
+        <p><strong>⏳ Available Tomorrow:</strong> {hosStats.availableHoursTomorrow}h</p>
         <Warning>⚠️ 34-hour reset required soon!</Warning>
       </RightPanel>
-
-      {/* Print Modal */}
       {isPrintModalOpen && (
-        <PrintableELDLog driver={driver} logs={staticLogs} onClose={() => setIsPrintModalOpen(false)} />
+        <PrintableELDLog driver={driver} logs={logs} onClose={() => setIsPrintModalOpen(false)} />
       )}
     </Container>
   );
 };
 
-export default ELDLogs;
+export default ELDLogsView;
 
-// Styled Components
+
 const Container = styled.div`
   display: flex;
   gap: 20px;

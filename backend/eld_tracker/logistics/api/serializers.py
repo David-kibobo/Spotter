@@ -7,6 +7,7 @@ from utils.validators import (
     validate_hos_rules, 
     calculate_hos_hours
 )
+from utils.responses import error_response
 
 class TripSerializer(serializers.ModelSerializer):
     driver_data = DriverListSerializer(source="driver", read_only=True)
@@ -48,11 +49,15 @@ class ELDLogSerializer(serializers.ModelSerializer):
 
         # Validate HOS rules (transitions, limits, 8-hour break)
         hos_check = validate_hos_rules(driver, new_status)
+
         if hos_check:
-            raise serializers.ValidationError(hos_check.data["message"])
+            # Ensure hos_check is a dictionary with a 'message' key
+            if "message" in hos_check:
+                raise serializers.ValidationError(hos_check["message"])
+            else:
+                raise serializers.ValidationError("HOS validation failed with no message.")
 
         return data
-
     def create(self, validated_data):
         """
         Custom create method to update HOS compliance fields before saving.

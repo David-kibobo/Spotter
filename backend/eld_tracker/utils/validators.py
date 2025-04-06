@@ -7,14 +7,16 @@ from utils.responses import error_response, success_response  # Import custom re
 from rest_framework.exceptions import ValidationError
 
 def format_serializer_errors(errors):
-    """
-    Converts serializer validation errors into user-friendly messages.
-    """
     formatted_errors = []
     for field, messages in errors.items():
+        field_name = field.replace('_', ' ').capitalize()
         for message in messages:
-            formatted_errors.append(f"{field.replace('_', ' ').capitalize()}: {message}")
+            if field == "non_field_errors":
+                formatted_errors.append(f"{message}")
+            else:
+                formatted_errors.append(f"{field_name}: {message}")
     return formatted_errors
+
 
 def validate_serializer(serializer):
     """
@@ -40,13 +42,13 @@ def validate_hos_rules(driver, new_status):
 
     # Get the latest log entry for this driver
     last_log = ELDLog.objects.filter(driver=driver).order_by("-timestamp").first()
-    
+
     if last_log:
         last_status = last_log.hos_status
 
         # Ensure status transitions are valid
         if new_status not in VALID_TRANSITIONS.get(last_status, []):
-            return error_response(f"Invalid HOS transition: Cannot change from {last_status} to {new_status}.")
+            return {"message": f"Invalid HOS transition: Cannot change from {last_status} to {new_status}."}
 
     # Fetch logs for the past 24 hours and 8 days
     hos_data = calculate_hos_hours(driver)
@@ -54,14 +56,14 @@ def validate_hos_rules(driver, new_status):
     # Validate HOS limits
     if new_status == "driving":
         if hos_data["total_hours_past_24"] >= 11:
-            return error_response("HOS Rule: You cannot drive more than 11 hours in a 24-hour period.")
+            return {"message": "HOS Rule: You cannot drive more than 11 hours in a 24-hour period."}
         if hos_data["total_hours_past_8_days"] >= 70:
-            return error_response("HOS Rule: You cannot drive more than 70 hours in 8 days.")
+            return {"message": "HOS Rule: You cannot drive more than 70 hours in 8 days."}
 
         # Ensure a 30-minute break after 8 hours of driving
         eight_hour_check = validate_8_hour_rule(driver)
         if eight_hour_check:
-            return eight_hour_check
+            return eight_hour_check  # Return error if check fails
 
     return None  # No error, status update is valid
 
@@ -116,9 +118,18 @@ def calculate_hos_hours(driver):
     logs_last_5d = ELDLog.objects.filter(driver=driver, timestamp__gte=past_5_days, hos_status__in=["on_duty", "driving"])
 
     # Calculate total hours dynamically based on time differences
-    total_hours_24h = sum((log.end_time - log.timestamp).total_seconds() / 3600 for log in logs_last_24h if log.end_time)
-    total_hours_8d = sum((log.end_time - log.timestamp).total_seconds() / 3600 for log in logs_last_8d if log.end_time)
-    total_hours_5d = sum((log.end_time - log.timestamp).total_seconds() / 3600 for log in logs_last_5d if log.end_time)
+    total_hours_24h = sum(
+        ((log.endtime or now_time) - log.timestamp).total_seconds() / 3600
+        for log in logs_last_24h
+    )
+    total_hours_8d = sum(
+        ((log.endtime or now_time) - log.timestamp).total_seconds() / 3600
+        for log in logs_last_8d
+    )
+    total_hours_5d = sum(
+        ((log.endtime or now_time) - log.timestamp).total_seconds() / 3600
+        for log in logs_last_5d
+    )
 
     # Available hours tomorrow based on the correct 70-hour calculation
     available_hours_tomorrow = max(0, 70 - total_hours_8d)
@@ -140,6 +151,7 @@ def calculate_hos_hours(driver):
         "available_hours_tomorrow": available_hours_tomorrow,
         "consecutive_off_duty_hours": consecutive_off_duty_hours,
     }
+
 
 
 

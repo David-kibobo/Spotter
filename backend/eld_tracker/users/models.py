@@ -8,6 +8,7 @@ class Carrier(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255, unique=True)
     owner = models.OneToOneField("User", on_delete=models.SET_NULL, null=True, related_name="owned_carrier")
+    address=models.CharField(max_length=255, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

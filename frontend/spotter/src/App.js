@@ -13,6 +13,9 @@ import SettingsPage from './components/dashboard/SettingsPage';
 import DashboardHome from './components/dashboard/Home';
 import AdminPanel from './components/dashboard/AdminPanel';
 import { fetchCurrentUser } from './api/endPoints';
+import ELDLogsView from './components/dashboard/ELD/ELDLogsView';
+import CarrierELDLogs from './components/dashboard/ELD/CarrierELDLogs';
+import DriverELDLogs from './components/dashboard/ELD/DriverELDLogs';
 function App() {
 
   const dispatch = useDispatch();
@@ -29,7 +32,10 @@ function App() {
           <Route path= '/' element={<Dashboard />}>
           <Route index element={<DashboardHome />} />
           <Route path= '/view-map' element={<MapPage/>}/>
-          <Route path= '/eld-logs' element={<ELDLogsPage/>}/>
+          {/* <Route path= '/eld-logs' element={<ELDLogsPage/>}/> */}
+          <Route path="/eld-logs/carrier" element={<CarrierELDLogs />} />
+          <Route path="/eld-logs/driver" element={<DriverELDLogs />} />
+
           <Route path= '/trips' element={<TripsPage/>}/>
           <Route path= '/admin-panel' element={<AdminPanel/>}/>
           <Route path= '/settings' element={<SettingsPage/>}/>
