@@ -1,11 +1,14 @@
 from django.urls import path
-from .views import TripAPIView, ActiveTripListAPIView, TripLogListCreateAPIView, TripLogDetailAPIView, ELDLogListCreateAPIView, ELDLogDetailAPIView, LoadListCreateAPIView, LoadDetailAPIView
+from .views import TripAPIView, ActiveTripListAPIView, TripLogListCreateAPIView, DriverTripsAPIView, TripLogDetailAPIView, ELDLogListCreateAPIView, ELDLogDetailAPIView, LoadListCreateAPIView, LoadDetailAPIView
 
 urlpatterns = [
     # Trip API Endpoints
     path('trips/', TripAPIView.as_view(), name='trip-list-create'),
     path('trips/<uuid:trip_id>/', TripAPIView.as_view(), name='trip-detail-update'),
     path('active-trips/', ActiveTripListAPIView.as_view(), name='active-trip-list'),
+    path('driver-trips/<int:driver_id>/', DriverTripsAPIView.as_view(), name='driver-trips'),
+ 
+
 
     # TripLog API Endpoints
     path('trips/<uuid:trip_id>/logs/', TripLogListCreateAPIView.as_view(), name='trip-log-list-create'),

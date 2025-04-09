@@ -145,6 +145,7 @@ const MainContent = styled.div`
 const Header = styled.div`
   text-align: center;
   padding-bottom: 20px;
+  height:70px;
 `;
 
 const ContentWrapper = styled.div`

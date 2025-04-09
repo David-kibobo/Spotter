@@ -43,10 +43,7 @@ const CreateTripModal = ({ onClose, drivers, trucks }) => {
   const handleInputChange = (e) => {
     setTripData({ ...tripData, [e.target.name]: e.target.value });
   };
-  const handleCreateLoad = (tripId, load) => {
-    setLoadData(load); // Store load data (optional, just for preview)
-    console.log("New Load Added:", load);
-  };
+
 
   // Handle location selection from map
   const handleMapClick = async (e) => {
@@ -77,26 +74,20 @@ const CreateTripModal = ({ onClose, drivers, trucks }) => {
     }
   };
 
-
-  // Handle trip form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    try {
-      // Call the API to create a trip
-      const response = await dispatch(createTrip(tripData));
-      if (response.success) {
-        alert("Trip created successfully!");
-        onClose(); // Close the modal after successful creation
-      } else {
-        alert("Failed to create trip");
-      }
-    } catch (error) {
-      console.error("Error creating trip:", error);
-      alert("There was an error creating the trip.");
+  
+    const result = await dispatch(createTrip(tripData));
+  
+    if (createTrip.fulfilled.match(result)) {
+      alert("Trip created successfully!");
+      onClose(); // Close the modal after successful creation
+    } else {
+      // Either show payload (error from rejectWithValue) or fallback error
+      alert(result.payload || "Failed to create trip.");
     }
   };
-
+  
   return (
     <Overlay>
       <ModalContainer>
@@ -132,7 +123,7 @@ const CreateTripModal = ({ onClose, drivers, trucks }) => {
           <Label>📍 Start Location</Label>
           <InputRow>
             <Input name="start_location" value={tripData.start_location || " "} onChange={handleInputChange} placeholder="Enter start location..." />
-            <Button onClick={() => { setLocationType("start"); setShowMap(true); }}>📍 Pick on Map</Button>
+            <Button type="button" onClick={() => { setLocationType("start"); setShowMap(true); }}>📍 Pick on Map</Button>
           </InputRow>
           <InputRow>
             <Input name="start_latitude" value={tripData.start_latitude || ""} placeholder="Latitude" readOnly />
@@ -143,7 +134,7 @@ const CreateTripModal = ({ onClose, drivers, trucks }) => {
           <Label>📍 Destination</Label>
           <InputRow>
             <Input name="destination_location" value={tripData.destination_location} onChange={handleInputChange} placeholder="Enter destination..." />
-            <Button onClick={() => { setLocationType("destination"); setShowMap(true); }}>📍 Pick on Map</Button>
+            <Button type="button" onClick={() => { setLocationType("destination"); setShowMap(true); }}>📍 Pick on Map</Button>
           </InputRow>
           <InputRow>
             <Input name="destination_latitude" value={tripData.destination_latitude || ""} placeholder="Latitude" readOnly />
@@ -181,7 +172,7 @@ const CreateTripModal = ({ onClose, drivers, trucks }) => {
           <Label>📌 Trip Status</Label>
           <Select name="status" value={tripData.status} onChange={handleInputChange}>
             <option value="scheduled">Scheduled</option>
-            <option value="ongoing">Ongoing</option>
+            <option value="in_progress">Ongoing</option>
             <option value="completed">Completed</option>
           </Select>
 

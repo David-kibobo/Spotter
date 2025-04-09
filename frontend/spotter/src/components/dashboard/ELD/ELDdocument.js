@@ -1,50 +1,57 @@
-import React, { useRef } from "react";
-import { useReactToPrint } from "react-to-print";
-import styled from "styled-components";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
-import ELDGraph from "./ELDGraph";
+import React, { useRef } from 'react';
+import { useReactToPrint } from 'react-to-print';
+import styled from 'styled-components';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import { transformLogData, formatMinutes } from '../../../utils/helpers';
+import ELDGraph from './ELDGraph';
 
-const PrintableELDLog = ({ driver, logs, onClose }) => {
+const PrintableELDLog = ({ driver, logs, onClose, hosStats, todayDurations, selectedDate }) => {
   const printRef = useRef();
 
   const handleDownloadPDF = async () => {
     if (!printRef.current) return;
     const canvas = await html2canvas(printRef.current);
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("p", "mm", "a4");
-    pdf.addImage(imgData, "PNG", 10, 10, 180, 0);
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    pdf.addImage(imgData, 'PNG', 10, 10, 180, 0);
     pdf.save(`ELD_Log_${driver.name}.pdf`);
   };
 
-  // Calculate total status times
-  const statusTotals = logs.reduce((acc, log) => {
-    acc[log.status] = (acc[log.status] || 0) + log.duration;
-    return acc;
-  }, {});
+  const transformedData = transformLogData(logs);
+
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: `ELD_Log_${driver.name}`,
+    pageStyle: `
+      @page { size: auto; margin: 5mm; }
+      @media print {
+        body { -webkit-print-color-adjust: exact; }
+        ${StyledPrintArea} { padding: 0; }
+      }
+    `,
+  });
 
   return (
     <ModalOverlay>
       <ModalContent>
         <CloseButton onClick={onClose}>✖</CloseButton>
         <ScrollableArea>
-          <PrintArea ref={printRef}>
-            <Header>
+          <StyledPrintArea ref={printRef}>
+          <Header>
               <h1>Driver’s Daily Log</h1>
               <p><strong>Driver:</strong> {driver.name} | <strong>Co-Driver:</strong> {driver.coDriver || "N/A"}</p>
               <p><strong>Truck:</strong> {driver.truckNumber} | <strong>Miles Driven:</strong> {driver.milesDriven} mi</p>
               <p><strong>Carrier:</strong> {driver.carrier}</p>
-              <p><strong>Carrier’s Office:</strong> {driver.officeAddress}</p>
-              <p><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
+              <p><strong>Carrier’s Office:</strong> {driver?.carrierAddress}</p>
+              <p><strong>Date:</strong> {selectedDate}</p>
             </Header>
 
-            {/* ELD Graph Section */}
             <GraphSection>
               <h3>ELD Graph</h3>
-              <ELDGraph />
+              <ELDGraph logs={logs} />
             </GraphSection>
 
-            {/* Log Entries */}
             <LogSection>
               <h3>Today's Log Entries</h3>
               <LogTable>
@@ -57,7 +64,7 @@ const PrintableELDLog = ({ driver, logs, onClose }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {logs.map((log, index) => (
+                  {transformedData.map((log, index) => (
                     <tr key={index}>
                       <td>{log.time}</td>
                       <td>{log.status}</td>
@@ -69,20 +76,19 @@ const PrintableELDLog = ({ driver, logs, onClose }) => {
               </LogTable>
             </LogSection>
 
-            {/* Compliance Summary */}
             <ComplianceSection>
               <h3>Compliance Summary</h3>
-              <p><strong>Total On-Duty Today:</strong> {statusTotals["On-Duty"] || 0} min</p>
-              <p><strong>Total Driving Today:</strong> {statusTotals["Driving"] || 0} min</p>
-              <p><strong>Total Rest (Off-Duty + Sleeper Berth):</strong> {(statusTotals["Off-Duty"] || 0) + (statusTotals["Sleeper Berth"] || 0)} min</p>
-              <p><strong>Last 7 Days:</strong> 63h (7h remaining)</p>
+              <p><strong>Total On-Duty Today:</strong> {formatMinutes(todayDurations.onDutyToday) || 0}</p>
+              <p><strong>Total Driving Today:</strong> {formatMinutes(todayDurations.drivingToday) || 0}</p>
+              <p><strong>Total Rest (Off-Duty + Sleeper Berth):</strong> {formatMinutes((todayDurations.offDutyToday || 0) + (todayDurations.sleeperToday || 0))}</p>
+              <p>
+                <strong>Last 7 Days:</strong> {`${hosStats.totalLast7Days}h (${hosStats.availableHoursTomorrow}h remaining)`}
+              </p>
               <Warning>⚠️ 34-hour reset required soon!</Warning>
             </ComplianceSection>
-          </PrintArea>
+          </StyledPrintArea>
+          <PrintButton onClick={handlePrint}>🖨️ Print / Save as PDF</PrintButton>
         </ScrollableArea>
-
-        {/* Print Button */}
-        <PrintButton onClick={handleDownloadPDF}>📥 Download PDF</PrintButton>
       </ModalContent>
     </ModalOverlay>
   );
@@ -90,7 +96,18 @@ const PrintableELDLog = ({ driver, logs, onClose }) => {
 
 export default PrintableELDLog;
 
-// Styled Components
+// Styled components remain unchanged
+
+// --- STYLED COMPONENTS --- (Keep your existing styles)
+const StyledPrintArea = styled.div`
+  background: white;
+  padding: 20px;
+  @media print {
+    padding: 0;
+    width: 100%;
+  }
+`;
+
 const ModalOverlay = styled.div`
   position: fixed;
   top: 0;
@@ -150,11 +167,6 @@ const PrintButton = styled.button`
   &:hover {
     background: #1a252f;
   }
-`;
-
-const PrintArea = styled.div`
-  background: white;
-  padding: 20px;
 `;
 
 const Header = styled.div`

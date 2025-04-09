@@ -1,13 +1,15 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { createTrip, fetchTrips, updateTrip, deleteTrip } from "../../api/endPoints";
+import { createTrip, fetchTrips, updateTrip, deleteTrip, fetchDriverTrips } from "../../api/endPoints";
+
+const initialState = {
+  trips: [],
+  loading: false,
+  error: null,
+};
 
 const tripsSlice = createSlice({
   name: "trips",
-  initialState: {
-    trips: [],
-    loading: false,
-    error: null,
-  },
+  initialState,
   reducers: {
     clearTripsError: (state) => {
       state.error = null;
@@ -15,33 +17,54 @@ const tripsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch Trips
+      // Fetch All Trips
       .addCase(fetchTrips.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchTrips.fulfilled, (state, action) => {
         state.loading = false;
-        state.trips = action.payload;
+        state.trips = Array.isArray(action.payload?.data) ? action.payload.data : [];
       })
       .addCase(fetchTrips.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        state.error = action.payload?.message || "Failed to fetch trips";
       })
+
+      // Fetch Driver Trips
+      .addCase(fetchDriverTrips.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchDriverTrips.fulfilled, (state, action) => {
+        state.loading = false;
+        state.trips = Array.isArray(action.payload?.data) ? action.payload?.data : [];
+      })
+      .addCase(fetchDriverTrips.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || "Failed to fetch driver trips";
+      })
+
       // Create Trip
       .addCase(createTrip.fulfilled, (state, action) => {
-        state.trips.push(action.payload);
-      })
-      // Update Trip
-      .addCase(updateTrip.fulfilled, (state, action) => {
-        const index = state.trips.findIndex((trip) => trip.id === action.payload.id);
-        if (index !== -1) {
-          state.trips[index] = action.payload;
+        const newTrip = action.payload;
+        if (newTrip && typeof newTrip === "object") {
+          state.trips = [...state.trips, newTrip];
         }
       })
+
+      // Update Trip
+      .addCase(updateTrip.fulfilled, (state, action) => {
+        const updatedTrip = action.payload;
+        state.trips = state.trips.map((trip) =>
+          trip.id === updatedTrip.id ? updatedTrip : trip
+        );
+      })
+
       // Delete Trip
       .addCase(deleteTrip.fulfilled, (state, action) => {
-        state.trips = state.trips.filter((trip) => trip.id !== action.payload);
+        const deletedId = action.payload;
+        state.trips = state.trips.filter((trip) => trip.id !== deletedId);
       });
   },
 });

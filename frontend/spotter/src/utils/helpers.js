@@ -33,7 +33,6 @@ export const roundTo6 = (num) => Math.round(num * 1e6) / 1e6;
 
 
 
-// src/helpers/logHelpers.js
 
 // Status mapping
 const statusMap = {
@@ -49,23 +48,20 @@ export function formatTime(timestamp) {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-// Function to calculate duration between two timestamps
-function calculateDuration(endTime, startTime) {
-  if (isNaN(endTime) || isNaN(startTime)) {
-    console.error("Invalid date:", endTime, startTime);
-    return "Invalid Date";
+/// Function to calculate duration between two timestamps
+export function calculateDuration(start, end) {
+  const diffMs = new Date(end) - new Date(start);
+
+  if (diffMs < 0) {
+    console.warn('Negative time difference:', { start, end });
+    return 'Invalid duration';
   }
 
-  const diffInMs = endTime - startTime;  // Get the difference in milliseconds
-  if (diffInMs < 0) {
-    console.error("Negative time difference:", endTime, startTime);
-    return "Invalid Duration";
-  }
+  const diffMins = Math.floor(diffMs / 60000);
+  const hours = Math.floor(diffMins / 60);
+  const minutes = diffMins % 60;
 
-  const hours = Math.floor(diffInMs / (1000 * 60 * 60));  // Convert to hours
-  const minutes = Math.floor((diffInMs % (1000 * 60 * 60)) / (1000 * 60));  // Convert remaining ms to minutes
-
-  return `${hours}h ${minutes}m`;  // Return the formatted duration
+  return `${hours}h ${minutes}m`;
 }
 
 
@@ -75,7 +71,6 @@ export function transformLogData(logs) {
 
   for (let i = 0; i < logs.length; i++) {
     const log = logs[i];
-    const previousLog = logs[i - 1];
 
     // Format the time from timestamp
     const time = formatTime(log.timestamp);
@@ -83,19 +78,16 @@ export function transformLogData(logs) {
     // Map the status
     const status = statusMap[log.hos_status] || "⚪ Off-Duty";
 
-    // Calculate duration if there's a previous log, otherwise set 'N/A' for the first log
-    let duration = 'N/A';
-    if (previousLog) {
-      // Ensure both timestamps are Date objects
+    // Calculate duration using *this* log's own timestamp and endtime
+    let duration = "N/A";
+    if (log.endtime) {
+      const startTime = new Date(log.timestamp);
       const endTime = new Date(log.endtime);
-      const startTime = new Date(previousLog.timestamp);
-      duration = calculateDuration(endTime, startTime);  // Assumes calculateDuration returns a readable format like '2h 30m'
+      duration = calculateDuration(startTime, endTime);
     }
 
-    // Prepare the remarks
     const remarks = log.remarks || "No remarks";
 
-    // Push the formatted log
     transformedLogs.push({
       time,
       status,
@@ -106,6 +98,7 @@ export function transformLogData(logs) {
 
   return transformedLogs;
 }
+
 
 // Frontend HOS enforcer
 
@@ -145,3 +138,65 @@ export const canChangeStatus = (newStatus, currentStatus, hosStats) => {
 
   return true;
 };
+
+// Fuction to aggregate time by status for each day starting from midnight to the next midnight
+
+export function getHOSDurationsForDate(logs, selectedDate) {
+  const result = {
+    drivingToday: 0,
+    offDutyToday: 0,
+    sleeperToday: 0,
+    onDutyToday: 0,
+  };
+
+  // Set the start and end of the selected date
+  const startOfDay = new Date(selectedDate);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(selectedDate);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  logs.forEach(log => {
+    if (!log.endtime) return; // skip incomplete logs
+
+    const start = new Date(log.timestamp);
+    const end = new Date(log.endtime);
+
+    // Only count the part of the log that overlaps with the selected date range
+    const adjustedStart = start < startOfDay ? startOfDay : start;
+    const adjustedEnd = end > endOfDay ? endOfDay : end;
+
+    const diffMs = adjustedEnd - adjustedStart;
+    if (diffMs <= 0) return;
+
+    const diffMins = Math.floor(diffMs / 60000);
+
+    switch (log.hos_status) {
+      case 'driving':
+        result.drivingToday += diffMins;
+        break;
+      case 'off_duty':
+        result.offDutyToday += diffMins;
+        break;
+      case 'sleeper_berth':
+        result.sleeperToday += diffMins;
+        break;
+      case 'on_duty':
+        result.onDutyToday += diffMins;
+        break;
+      default:
+        break;
+    }
+  });
+
+  return result;
+}
+
+export function formatMinutes(mins) {
+  const hours = Math.floor(mins / 60);
+  const minutes = mins % 60;
+  return `${hours}h ${minutes}m`;
+}
+
+// Function to handle dashboard permissions and views
+export const hasRole = (user, allowedRoles) =>
+  user && allowedRoles.includes(user.role);

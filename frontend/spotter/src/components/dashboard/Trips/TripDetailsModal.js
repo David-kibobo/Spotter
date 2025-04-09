@@ -1,29 +1,229 @@
+// import React, { useState, useEffect } from "react";
+// import styled from "styled-components";
+// import CreateLoadModal from "./CreateLoadModal"; // Import the modal
+// import { fetchLoads } from "../../../api/endPoints";
+// import { useDispatch, useSelector } from "react-redux";
+
+// const TripDetailsModal = ({ trip, onClose, onCreateLoad }) => {
+//   const dispatch=useDispatch()
+//    useEffect(()=>{dispatch(fetchLoads())}, [dispatch])
+//   const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
+//  const loads=useSelector((state)=> state.loads?.loads ?? [])
+//  const loadsForThisTrip = loads.filter(load => load.trip === trip.id);
+
+//  console.log('My loads:', loads)
+
+//   // Fetch Loads when Modal Opens
+// //   useEffect(() => {
+// //     const fetchLoads = async () => {
+// //       try {
+// //         const response = await api.get(`/loads/?trip_id=${trip.id}`); // Filter by trip
+// //         setLoads(response.data);
+// //       } catch (error) {
+// //         console.error("Failed to fetch loads:", error);
+// //       }
+// //     };
+
+// //     fetchLoads();
+// //   }, [trip.id]);
+
+//   return (
+//     <ModalOverlay>
+//       <ModalContent>
+//         {/* Header */}
+//         <ModalHeader>
+//           {/* <h2>🚛 Trip Details</h2> */}
+//           <CloseButton onClick={onClose}>✖</CloseButton>
+//         </ModalHeader>
+
+//         {/* Trip Info */}
+//         <TripInfo>
+//           <p><strong>🚚 Truck:</strong> {trip.truck_data?.truck_number}</p>
+//           <p><strong>👤 Driver:</strong> {trip.driver_data?.user.first_name} {trip.driver_data?.user.last_name}</p>
+
+//           <p><strong>📍 From:</strong> {trip.start_location} ➝ <strong>To:</strong> {trip.destination_location}</p>
+//           <p><strong>📏 Distance:</strong> {trip.estimated_distance} miles</p>
+//         </TripInfo>
+
+//         {/* Loads Section */}
+//         <h3>📦 Loads</h3>
+//         {loadsForThisTrip && loadsForThisTrip.length > 0 ? (
+//           <LoadsContainer>
+//             {loadsForThisTrip.map((load, index) => (
+//               <LoadCard key={index}>
+//                 <LoadTitle>📦 {load.commodity} - {load.weight} lbs</LoadTitle>
+//                 <LoadDetails>
+//                   <span>📍 {load.pickup_location} ➝ {load.dropoff_location}</span>
+//                   <span>🕒 {load.pickup_time} - {load.dropoff_time}</span>
+//                 </LoadDetails>
+//               </LoadCard>
+//             ))}
+//           </LoadsContainer>
+//         ) : (
+//           <NoLoadsMessage>No loads added yet.</NoLoadsMessage>
+//         )}
+
+//         {/* Create Load Button */}
+//         <ButtonContainer>
+//           <CreateLoadButton onClick={() => setIsLoadModalOpen(true)}>➕ Add Load</CreateLoadButton>
+//         </ButtonContainer>
+
+//         {/* Create Load Modal */}
+//         {isLoadModalOpen && <CreateLoadModal tripId={trip.id} onClose={() => setIsLoadModalOpen(false)} onCreateLoad={onCreateLoad} />}
+//       </ModalContent>
+//     </ModalOverlay>
+//   );
+// };
+
+// export default TripDetailsModal;
+
+// // Styled Components
+// const ModalOverlay = styled.div`
+//   position: fixed;
+//   top: 0;
+//   left: 0;
+//   width: 100%;
+//   height: 100%;
+//   background: rgba(0, 0, 0, 0.6);
+//   display: flex;
+//   align-items: center;
+//   justify-content: center;
+//   z-index: 1000;
+// `;
+
+// const ModalContent = styled.div`
+//   background: white;
+//   padding: 25px;
+//   border-radius: 10px;
+//   width: 500px;
+//   max-width: 90%;
+//   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+//   text-align: left;
+//   animation: fadeIn 0.3s ease-in-out;
+// `;
+
+// // Header with Close Button
+// const ModalHeader = styled.div`
+//   display: flex;
+//   justify-content: space-between;
+//   align-items: center;
+//   border-bottom: 2px solid #ecf0f1;
+//   padding-bottom: 10px;
+//   margin-bottom: 15px;
+// `;
+
+// // Close Button
+// const CloseButton = styled.button`
+//   background: transparent;
+//   border: none;
+//   font-size: 20px;
+//   cursor: pointer;
+//   color: #e74c3c;
+//   &:hover {
+//     color: #c0392b;
+//   }
+// `;
+
+// // Trip Information Section
+// const TripInfo = styled.div`
+//   background: #f9f9f9;
+//   padding: 15px;
+//   border-radius: 8px;
+//   margin-bottom: 15px;
+//   font-size: 16px;
+// `;
+
+// // Loads Container
+// const LoadsContainer = styled.div`
+//   max-height: 200px;
+//   overflow-y: auto;
+//   margin-bottom: 15px;
+// `;
+
+// // Load Card
+// const LoadCard = styled.div`
+//   background: #ecf0f1;
+//   padding: 10px;
+//   margin: 8px 0;
+//   border-radius: 8px;
+//   box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+// `;
+
+// // Load Title
+// const LoadTitle = styled.p`
+//   font-weight: bold;
+//   color: #2c3e50;
+//   margin-bottom: 5px;
+// `;
+
+// // Load Details
+// const LoadDetails = styled.div`
+//   font-size: 14px;
+//   color: #7f8c8d;
+//   display: flex;
+//   flex-direction: column;
+// `;
+
+// // Message when no loads are available
+// const NoLoadsMessage = styled.p`
+//   text-align: center;
+//   color: #7f8c8d;
+//   font-style: italic;
+//   margin: 10px 0;
+// `;
+
+// // Button Container
+// const ButtonContainer = styled.div`
+//   display: flex;
+//   justify-content: center;
+//   margin-top: 10px;
+// `;
+
+// // Create Load Button
+// const CreateLoadButton = styled.button`
+//   background: #27ae60;
+//   color: white;
+//   padding: 12px 18px;
+//   border: none;
+//   border-radius: 6px;
+//   cursor: pointer;
+//   font-size: 16px;
+//   transition: 0.3s;
+//   &:hover {
+//     background: #219150;
+//   }
+// `;
+
+
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import CreateLoadModal from "./CreateLoadModal"; // Import the modal
-import { fetchLoads } from "../../../api/endPoints";
+import { fetchLoads, fetchTripLogs } from "../../../api/endPoints";
 import { useDispatch, useSelector } from "react-redux";
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet";
+
+import CreateLoadModal from "./CreateLoadModal"; 
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 const TripDetailsModal = ({ trip, onClose, onCreateLoad }) => {
-  const dispatch=useDispatch()
-   useEffect(()=>{dispatch(fetchLoads())}, [dispatch])
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(fetchLoads());
+    dispatch(fetchTripLogs(trip.id)); // Fetch trip logs based on the trip ID
+  }, [dispatch, trip.id]);
+
   const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
- const loads=useSelector((state)=> state.loads?.loads?.data ?? [])
- console.log('My loads:', loads)
+  const loads = useSelector((state) => state.loads?.loads ?? []);
+  const loadsForThisTrip = loads.filter((load) => load.trip === trip.id);
+ console.log("For this trip", loadsForThisTrip)
+   const tripLogs = useSelector((state) => state.tripLogs?.tripLogs ?? []);
+  // Coordinates for the start and destination locations
+  const startCoordinates = trip.start_coordinates || [37.7749, -122.4194]; 
+  const destinationCoordinates = trip.destination_coordinates || [34.0522, -118.2437]; 
 
-  // Fetch Loads when Modal Opens
-//   useEffect(() => {
-//     const fetchLoads = async () => {
-//       try {
-//         const response = await api.get(`/loads/?trip_id=${trip.id}`); // Filter by trip
-//         setLoads(response.data);
-//       } catch (error) {
-//         console.error("Failed to fetch loads:", error);
-//       }
-//     };
-
-//     fetchLoads();
-//   }, [trip.id]);
+  // Extract coordinates from trip logs (assuming lat, lng in logs)
+  const tripPath = tripLogs.map((log) => [log.latitude, log.longitude]);
 
   return (
     <ModalOverlay>
@@ -38,16 +238,48 @@ const TripDetailsModal = ({ trip, onClose, onCreateLoad }) => {
         <TripInfo>
           <p><strong>🚚 Truck:</strong> {trip.truck_data?.truck_number}</p>
           <p><strong>👤 Driver:</strong> {trip.driver_data?.user.first_name} {trip.driver_data?.user.last_name}</p>
-
           <p><strong>📍 From:</strong> {trip.start_location} ➝ <strong>To:</strong> {trip.destination_location}</p>
           <p><strong>📏 Distance:</strong> {trip.estimated_distance} miles</p>
         </TripInfo>
 
+        {/* Map Section */}
+        <MapSection>
+          <MapContainer center={startCoordinates} zoom={6} style={{ height: "300px", width: "100%" }}>
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution="&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors"
+            />
+            <Marker position={startCoordinates}>
+              <Popup>
+                <strong>Start Location</strong><br />
+                {trip.start_location}
+              </Popup>
+            </Marker>
+            <Marker position={destinationCoordinates}>
+              <Popup>
+                <strong>Destination</strong><br />
+                {trip.destination_location}
+              </Popup>
+            </Marker>
+
+            {/* Draw Polyline for the trip path */}
+            {tripPath.length > 1 && (
+              <Polyline
+                positions={tripPath}
+                color="blue"
+                weight={4}
+                opacity={0.7}
+                lineJoin="round"
+              />
+            )}
+          </MapContainer>
+        </MapSection>
+
         {/* Loads Section */}
         <h3>📦 Loads</h3>
-        {loads && loads.length > 0 ? (
+        {loadsForThisTrip && loadsForThisTrip.length > 0 ? (
           <LoadsContainer>
-            {loads.map((load, index) => (
+            {loadsForThisTrip.map((load, index) => (
               <LoadCard key={index}>
                 <LoadTitle>📦 {load.commodity} - {load.weight} lbs</LoadTitle>
                 <LoadDetails>
@@ -98,9 +330,12 @@ const ModalContent = styled.div`
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
   text-align: left;
   animation: fadeIn 0.3s ease-in-out;
+  max-height: 80vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 `;
 
-// Header with Close Button
 const ModalHeader = styled.div`
   display: flex;
   justify-content: space-between;
@@ -110,7 +345,6 @@ const ModalHeader = styled.div`
   margin-bottom: 15px;
 `;
 
-// Close Button
 const CloseButton = styled.button`
   background: transparent;
   border: none;
@@ -122,7 +356,6 @@ const CloseButton = styled.button`
   }
 `;
 
-// Trip Information Section
 const TripInfo = styled.div`
   background: #f9f9f9;
   padding: 15px;
@@ -131,14 +364,20 @@ const TripInfo = styled.div`
   font-size: 16px;
 `;
 
-// Loads Container
+const MapSection = styled.div`
+  margin-bottom: 20px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #ecf0f1;
+`;
+
 const LoadsContainer = styled.div`
   max-height: 200px;
   overflow-y: auto;
   margin-bottom: 15px;
+  flex-shrink: 0;
 `;
 
-// Load Card
 const LoadCard = styled.div`
   background: #ecf0f1;
   padding: 10px;
@@ -147,14 +386,12 @@ const LoadCard = styled.div`
   box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
 `;
 
-// Load Title
 const LoadTitle = styled.p`
   font-weight: bold;
   color: #2c3e50;
   margin-bottom: 5px;
 `;
 
-// Load Details
 const LoadDetails = styled.div`
   font-size: 14px;
   color: #7f8c8d;
@@ -162,7 +399,6 @@ const LoadDetails = styled.div`
   flex-direction: column;
 `;
 
-// Message when no loads are available
 const NoLoadsMessage = styled.p`
   text-align: center;
   color: #7f8c8d;
@@ -170,14 +406,12 @@ const NoLoadsMessage = styled.p`
   margin: 10px 0;
 `;
 
-// Button Container
 const ButtonContainer = styled.div`
   display: flex;
   justify-content: center;
   margin-top: 10px;
 `;
 
-// Create Load Button
 const CreateLoadButton = styled.button`
   background: #27ae60;
   color: white;
@@ -191,4 +425,3 @@ const CreateLoadButton = styled.button`
     background: #219150;
   }
 `;
-

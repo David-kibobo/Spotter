@@ -2,11 +2,21 @@ from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
-from ..models import Trip, TripLog,ELDLog, Trip, DriverProfile, Load
-from .serializers import TripSerializer, TripLogSerializer, ELDLogSerializer, LoadSerializer
+from ..models import Trip, TripLog, ELDLog, Trip, DriverProfile, Load
+from .serializers import (
+    TripSerializer,
+    TripLogSerializer,
+    ELDLogSerializer,
+    LoadSerializer,
+)
 from utils.common import get_object_or_error
-from utils.validators import validate_serializer, validate_hos_rules, validate_8_hour_rule
+from utils.validators import (
+    validate_serializer,
+    validate_hos_rules,
+    validate_8_hour_rule,
+)
 from utils.responses import success_response, error_response
+
 
 # Trip API View for listing, creating, and updating trips
 class TripAPIView(APIView):
@@ -21,32 +31,97 @@ class TripAPIView(APIView):
         return success_response("Trips retrieved successfully", serializer.data)
 
     def post(self, request):
-        user=self.request.user
-        data=request.data 
-        data['carrier']=user.carrier.id
-        
+        user = self.request.user
+        data = request.data
+        data["carrier"] = user.carrier.id
+
         serializer = TripSerializer(data=request.data)
         error_response_data = validate_serializer(serializer)
         if error_response_data:
             return error_response_data
-        
+
         serializer.save()
         return success_response("Trip created successfully", serializer.data)
 
     def patch(self, request, trip_id):
         trip = get_object_or_error(Trip, id=trip_id)
+
+        # If the status is being updated, handle the logic based on the status change
+        if "status" in request.data:
+            new_status = request.data["status"]
+
+            # Starting the trip (Scheduled -> Ongoing)
+            if new_status == "in_progress" and trip.status != "in_progress":
+                trip.status = "in_progress"
+                trip.start_time = timezone.now()  # Optionally, record the start time
+                trip.save()
+
+                return success_response(
+                    "Trip status updated to InProgress", TripSerializer(trip).data
+                )
+
+            # Ending the trip (Ongoing -> Completed)
+            elif new_status == "completed" and trip.status == "in_progress":
+                trip.status = "completed"
+                trip.end_time = timezone.now()  # Optionally, record the end time
+                trip.save()
+
+                return success_response(
+                    "Trip status updated to Completed", TripSerializer(trip).data
+                )
+
+            # Cancelling the trip (Scheduled -> Cancelled)
+            elif new_status == "cancelled" and trip.status == "scheduled":
+                trip.status = "cancelled"
+                trip.save()
+
+                return success_response(
+                    "Trip status updated to Cancelled", TripSerializer(trip).data
+                )
+
+            # Invalid status change (e.g., trying to start an already started trip or end a trip that is not ongoing)
+
+            elif trip.status == new_status:
+                return error_response(f"Trip is already in the '{new_status}' status.")
+
+            return error_response("Invalid status change.")
+
+        # For other updates (non-status related)
         serializer = TripSerializer(trip, data=request.data, partial=True)
         error_response_data = validate_serializer(serializer)
         if error_response_data:
             return error_response_data
-        
+
         serializer.save()
         return success_response("Trip updated successfully", serializer.data)
+
+
+class DriverTripsAPIView(APIView):
+    def get(self, request, driver_id=None):
+        if not driver_id:
+            return error_response("Driver ID is required.")
+
+        try:
+            driver = DriverProfile.objects.get(id=driver_id)
+        except DriverProfile.DoesNotExist:
+            return error_response("Driver not found.", status=404)
+
+        scheduled_trips = Trip.objects.filter(
+            # driver=driver, status__in=["scheduled", "in_progress"]
+            driver=driver
+        ).order_by("start_time")
+
+        serializer = TripSerializer(scheduled_trips, many=True)
+        return success_response(
+            "Scheduled trips retrieved for driver.", serializer.data
+        )
+
 
 class ActiveTripListAPIView(APIView):
     """
     API to get all active trips (scheduled & in progress).
     """
+
     def get(self, request):
         active_trips = Trip.objects.filter(status__in=["scheduled", "in_progress"])
         serializer = TripSerializer(active_trips, many=True)
@@ -73,15 +148,19 @@ class TripLogListCreateAPIView(APIView):
         #     return trip
 
         data = request.data.copy()
-        data["trip"] = trip.id  
+     
+        data["trip"] = trip.id
+        print('data is:', data)
         serializer = TripLogSerializer(data=data)
-        
+
         error_response_data = validate_serializer(serializer)
         if error_response_data:
-            return error_response_data  
+            return error_response_data
 
         serializer.save()
-        return success_response("Trip log created successfully", serializer.data, status.HTTP_201_CREATED)
+        return success_response(
+            "Trip log created successfully", serializer.data, status.HTTP_201_CREATED
+        )
 
 
 class TripLogDetailAPIView(APIView):
@@ -98,15 +177,12 @@ class TripLogDetailAPIView(APIView):
         return success_response("Trip log retrieved successfully", serializer.data)
 
 
-
-
-
 class ELDLogListCreateAPIView(APIView):
     """
     API to list all ELD logs and allow manual creation of new logs.
     """
-    
-    
+
+
 class ELDLogListCreateAPIView(APIView):
     """
     API to list all ELD logs and allow manual creation of new logs.
@@ -121,16 +197,22 @@ class ELDLogListCreateAPIView(APIView):
             driver = get_object_or_error(DriverProfile, id=driver_id)
             logs = ELDLog.objects.filter(driver=driver).order_by("-timestamp")
             if not logs.exists():
-                return error_response("No logs found for the specified driver", status.HTTP_404_NOT_FOUND)
+                return error_response(
+                    "No logs found for the specified driver", status.HTTP_404_NOT_FOUND
+                )
         elif trip_id:
             trip = get_object_or_error(Trip, id=trip_id)
             logs = ELDLog.objects.filter(trip=trip).order_by("-timestamp")
             if not logs.exists():
-                return error_response("No logs found for the specified trip", status.HTTP_404_NOT_FOUND)
+                return error_response(
+                    "No logs found for the specified trip", status.HTTP_404_NOT_FOUND
+                )
         else:
             logs = ELDLog.objects.filter(driver__carrier=carrier).order_by("-timestamp")
             if not logs.exists():
-                return error_response("No logs have been created yet", status.HTTP_404_NOT_FOUND)
+                return error_response(
+                    "No logs have been created yet", status.HTTP_404_NOT_FOUND
+                )
 
         serializer = ELDLogSerializer(logs, many=True)
         return success_response("ELD logs retrieved successfully.", serializer.data)
@@ -140,10 +222,12 @@ class ELDLogListCreateAPIView(APIView):
         Allow drivers to manually create an ELD log entry.
         """
         serializer = ELDLogSerializer(data=request.data)
-        error_response_data = validate_serializer(serializer)  # Capture serializer errors
+        error_response_data = validate_serializer(
+            serializer
+        )  # Capture serializer errors
         if error_response_data:
             return error_response_data
-        
+
         if serializer.is_valid():
             driver = serializer.validated_data["driver"]
             new_status = serializer.validated_data["hos_status"]
@@ -168,11 +252,16 @@ class ELDLogListCreateAPIView(APIView):
                 previous_log.save()
 
             # ✅ Step 4: Create the new log entry with the new status
-            serializer.save()  
-            return success_response("ELD log created successfully.", serializer.data, status.HTTP_201_CREATED)
+            serializer.save()
+            return success_response(
+                "ELD log created successfully.",
+                serializer.data,
+                status.HTTP_201_CREATED,
+            )
 
         return error_response("Failed to create ELD log.", status.HTTP_400_BAD_REQUEST)
-        
+
+
 class ELDLogDetailAPIView(APIView):
     """
     API to retrieve and update a single ELD log entry.
@@ -192,7 +281,9 @@ class ELDLogDetailAPIView(APIView):
         """
         log = get_object_or_error(ELDLog, id=log_id)
         serializer = ELDLogSerializer(log, data=request.data, partial=True)
-        error_response_data = validate_serializer(serializer)  # Capture serializer errors
+        error_response_data = validate_serializer(
+            serializer
+        )  # Capture serializer errors
         if error_response_data:
             return error_response(error_response_data, status.HTTP_400_BAD_REQUEST)
         if serializer.is_valid():
@@ -212,7 +303,8 @@ class ELDLogDetailAPIView(APIView):
 
             serializer.save()
             return success_response("ELD log updated successfully.", serializer.data)
-      
+
+
 class LoadListCreateAPIView(APIView):
     """
     API for listing and creating loads.
@@ -228,7 +320,9 @@ class LoadListCreateAPIView(APIView):
         if trip_id:
             loads = Load.objects.filter(trip_id=trip_id)
             if not loads.exists():
-                return error_response("No loads found for the specified trip.", status.HTTP_404_NOT_FOUND)
+                return error_response(
+                    "No loads found for the specified trip.", status.HTTP_404_NOT_FOUND
+                )
         else:
             loads = Load.objects.all()
             if not loads.exists():
@@ -241,24 +335,27 @@ class LoadListCreateAPIView(APIView):
         """
         Create a new load.
         """
-        print("My data:",request.data)
-        data=request.data
-        data['trip']=trip_id
-        trip=Trip.objects.get(id=trip_id)
+        print("My data:", request.data)
+        data = request.data
+        data["trip"] = trip_id
+        trip = Trip.objects.get(id=trip_id)
         serializer = LoadSerializer(data=data)
-        
+
         error_response_data = validate_serializer(serializer)
         if error_response_data:
             return error_response_data
 
         # Save the load instance
         load = serializer.save()
-        trip.has_load=True
+        trip.has_load = True
         trip.save()
-        
 
         # Return success response with serialized load data
-        return success_response("Load created successfully.", serializer.data, status.HTTP_201_CREATED)
+        return success_response(
+            "Load created successfully.", serializer.data, status.HTTP_201_CREATED
+        )
+
+
 class LoadDetailAPIView(APIView):
     """
     API for retrieving, updating, and deleting a specific load.
@@ -293,4 +390,6 @@ class LoadDetailAPIView(APIView):
         """
         load = get_object_or_error(Load, id=load_id)
         load.delete()
-        return success_response("Load deleted successfully.", None, status.HTTP_204_NO_CONTENT)
+        return success_response(
+            "Load deleted successfully.", None, status.HTTP_204_NO_CONTENT
+        )

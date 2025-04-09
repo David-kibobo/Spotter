@@ -66,20 +66,20 @@ const CreateLoadModal = ({ tripId, onClose, onCreateLoad }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const response = await dispatch(createLoad({loadData, tripId})); // Send load data with trip ID
-      if (response.success) {
-        alert("Load created successfully!");
-        onCreateLoad(response.load); // Call onCreateLoad with new load
-        onClose(); // Close the modal
-      } else {
-        alert("Failed to create load");
-      }
-    } catch (error) {
-      console.error("Error creating load:", error);
-      alert("There was an error creating the load.");
+  
+   
+    const result = await dispatch(createLoad({ loadData, tripId }));
+
+    if (createLoad.fulfilled.match(result)) {
+    
+      alert("Trip created successfully!");
+      onClose(); 
+    } else {
+   
+      alert(result.payload || "Failed to create trip.");
     }
   };
+  
 
   return (
     <Overlay>
@@ -137,6 +137,7 @@ const CreateLoadModal = ({ tripId, onClose, onCreateLoad }) => {
               placeholder="Enter pickup location..."
             />
             <Button
+            type="button"
               onClick={() => {
                 setLocationType("pickup");
                 setShowMap(true);
@@ -160,6 +161,7 @@ const CreateLoadModal = ({ tripId, onClose, onCreateLoad }) => {
               placeholder="Enter delivery location..."
             />
             <Button
+            type="button"
               onClick={() => {
                 setLocationType("delivery");
                 setShowMap(true);

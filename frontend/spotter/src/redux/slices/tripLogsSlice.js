@@ -1,5 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { createTripLog, fetchTripLogs, updateTripLog, deleteTripLog } from "../../api/endPoints";
+import {
+  createTripLog,
+  fetchTripLogs,
+  updateTripLog,
+  deleteTripLog,
+} from "../../api/endPoints";
 
 const tripLogsSlice = createSlice({
   name: "tripLogs",
@@ -22,26 +27,35 @@ const tripLogsSlice = createSlice({
       })
       .addCase(fetchTripLogs.fulfilled, (state, action) => {
         state.loading = false;
-        state.tripLogs = action.payload;
+        state.tripLogs = Array.isArray(action.payload?.data) ? action.payload?.data : [];
       })
       .addCase(fetchTripLogs.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        state.error = action.payload || "Failed to fetch trip logs";
       })
+
       // Create Trip Log
       .addCase(createTripLog.fulfilled, (state, action) => {
-        state.tripLogs.push(action.payload);
-      })
-      // Update Trip Log
-      .addCase(updateTripLog.fulfilled, (state, action) => {
-        const index = state.tripLogs.findIndex((log) => log.id === action.payload.id);
-        if (index !== -1) {
-          state.tripLogs[index] = action.payload;
+        if (Array.isArray(state.tripLogs)) {
+          state.tripLogs.push(action.payload);
+        } else {
+          console.error("tripLogs is not an array", state.tripLogs);
         }
       })
+
+      // Update Trip Log
+      .addCase(updateTripLog.fulfilled, (state, action) => {
+        const updated = action.payload;
+        const index = state.tripLogs.findIndex((log) => log.id === updated.id);
+        if (index !== -1) {
+          state.tripLogs[index] = updated;
+        }
+      })
+
       // Delete Trip Log
       .addCase(deleteTripLog.fulfilled, (state, action) => {
-        state.tripLogs = state.tripLogs.filter((log) => log.id !== action.payload);
+        const id = action.payload;
+        state.tripLogs = state.tripLogs.filter((log) => log.id !== id);
       });
   },
 });

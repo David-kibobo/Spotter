@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import LandingPage from './pages/LandingPage';
 import Dashboard from './components/dashboard/dashboardLayout';
-import MapPage from './components/dashboard/MapPage';
+import MapPage from './components/dashboard/maps/MapPage';
 import ELDLogsPage from './components/dashboard/ELD/ELDLogsPage';
 import TripsPage from './components/dashboard/Trips/TripsPage';
 import SettingsPage from './components/dashboard/SettingsPage';

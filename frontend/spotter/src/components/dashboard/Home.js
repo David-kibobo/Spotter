@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import styled from "styled-components";
-import MapComponent from "./MapComponent";
+import MapComponent from "./maps/MapComponent";
 const DashboardHome = () => {
   const [userRole, setUserRole] = useState(null);
 

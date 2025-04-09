@@ -10,12 +10,14 @@ TRIP_STATUS_CHOICES = [
     ("in_progress", "In Progress"),
     ("completed", "Completed"),
     ("canceled", "Canceled"),
+    
 ]
 
 
 TRIPLOG_SOURCE_CHOICES = [
     ("map_api", "Map API"),
     ("manual", "Manual Entry"),
+    ("simulated", "Simulated Entry"),
 ]
 
 
@@ -50,7 +52,7 @@ class Trip(models.Model):
     has_load=models.BooleanField(default =False)
 
     def __str__(self):
-        return f"{self.truck.truck_number} - {self.start_location} to {self.destination}"
+        return f"{self.truck.truck_number} - {self.start_location} to {self.destination_location}"
 
 class TripLog(models.Model):
     trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name="logs")

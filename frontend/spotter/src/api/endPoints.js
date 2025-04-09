@@ -104,14 +104,21 @@ export const deleteTruck = createAsyncThunk("trucks/deleteTruck", async (id, { r
 
 
 // Trips
-export const createTrip = createAsyncThunk("logistics/createTrip", async (tripData, { rejectWithValue }) => {
-  try {
-    const response = await API.post("/api/logistics/trips/", tripData);
-    return response.data;
-  } catch (error) {
-    return rejectWithValue(error.response?.data?.error || "Failed to create trip");
+
+export const createTrip = createAsyncThunk(
+  "logistics/createTrip",
+  async (tripData, { rejectWithValue }) => {
+    try {
+      const response = await API.post("/api/logistics/trips/", tripData);
+   
+      return response.data;
+    } catch (error) {
+      // Log error for debugging in dev tools
+      console.error("Create Trip Error:", error.response?.data || error.message);
+      return rejectWithValue(error.response?.data?.error || "Failed to create trip");
+    }
   }
-});
+);
 
 export const fetchTrips = createAsyncThunk("logistics/fetchTrips", async (_, { rejectWithValue }) => {
   try {
@@ -122,14 +129,18 @@ export const fetchTrips = createAsyncThunk("logistics/fetchTrips", async (_, { r
   }
 });
 
-export const updateTrip = createAsyncThunk("logistics/updateTrip", async ({ id, tripData }, { rejectWithValue }) => {
-  try {
-    const response = await API.put(`/api/logistics/trips/${id}/`, tripData);
-    return response.data;
-  } catch (error) {
-    return rejectWithValue(error.response?.data?.error || "Failed to update trip");
+export const updateTrip = createAsyncThunk(
+  "logistics/updateTrip",
+  async ({ id, tripData }, { rejectWithValue }) => {
+    try {
+   
+      const response = await API.patch(`/api/logistics/trips/${id}/`, tripData);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error || "Failed to update trip");
+    }
   }
-});
+);
 
 export const deleteTrip = createAsyncThunk("logistics/deleteTrip", async (id, { rejectWithValue }) => {
   try {
@@ -142,9 +153,10 @@ export const deleteTrip = createAsyncThunk("logistics/deleteTrip", async (id, { 
 
 
 // Trip Logs
-export const createTripLog = createAsyncThunk("logistics/createTripLog", async ({ tripId, logData }, { rejectWithValue }) => {
+export const createTripLog = createAsyncThunk("logistics/createTripLog", async ({currentTripId, tripLogData}, { rejectWithValue }) => {
+  console.log("endpointTripId", currentTripId)
   try {
-    const response = await API.post(`/api/logistics/trips/${tripId}/logs/`, logData);
+    const response = await API.post(`/api/logistics/trips/${currentTripId}/logs/`, tripLogData);
     return response.data;
   } catch (error) {
     return rejectWithValue(error.response?.data?.error || "Failed to create trip log");
@@ -158,7 +170,21 @@ export const fetchTripLogs = createAsyncThunk("logistics/fetchTripLogs", async (
   } catch (error) {
     return rejectWithValue(error.response?.data?.error || "Failed to fetch trip logs");
   }
+});export const fetchDriverTrips = createAsyncThunk("logistics/fetchDriverTrips", async (driver_id, { rejectWithValue, getState }) => {
+  try {
+    // const user = getState().auth.user;
+    // if (!user?.driver_profile) {
+    //   return rejectWithValue("User is not a driver.");
+    // }
+
+    // Fetch trips assigned to the specific driver
+    const response = await API.get(`/api/logistics/driver-trips/${driver_id}/`);
+    return response.data; 
+  } catch (error) {
+    return rejectWithValue(error.response?.data?.error || "Failed to fetch driver trips");
+  }
 });
+
 
 export const updateTripLog = createAsyncThunk("logistics/updateTripLog", async ({ tripId, logId, logData }, { rejectWithValue }) => {
   try {
