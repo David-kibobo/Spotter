@@ -61,7 +61,7 @@ import styled from "styled-components";
 import { updateTrip } from "../../../api/endPoints";
 import { useDispatch } from "react-redux";
 
-const DriversTripList = ({ trips }) => {
+const DriversTripList = ({ trips, setSelectedTrip  }) => {
   const dispatch = useDispatch();
 
   const handleStartTrip = (tripId) => {
@@ -80,7 +80,7 @@ const DriversTripList = ({ trips }) => {
     <div>
       {trips?.length > 0 ? (
         trips.map((trip) => (
-          <TripCard key={trip.id}>
+          <TripCard key={trip.id} onClick={() => setSelectedTrip(trip)}>
             <div>
               <p>
                 <strong>{trip.start_location}</strong> ➝{" "}
