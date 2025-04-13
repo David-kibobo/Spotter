@@ -74,6 +74,11 @@ export default Dashboard;
 /* Styled Components */
 const DashboardContainer = styled.div`
   display: flex;
+  flex-direction: row;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
 `;
 
 const Sidebar = styled.div`
@@ -87,6 +92,17 @@ const Sidebar = styled.div`
   height: 100vh;
   overflow-y: auto;
   transition: width 0.3s ease-in-out;
+
+  @media (max-width: 768px) {
+    position: relative;
+    width: 100%;
+    height: auto;
+    padding: 10px 15px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
 `;
 
 const ToggleBtn = styled.button`
@@ -96,6 +112,11 @@ const ToggleBtn = styled.button`
   font-size: 20px;
   cursor: pointer;
   margin-bottom: 10px;
+
+  @media (max-width: 768px) {
+    margin: 0;
+    font-size: 24px;
+  }
 `;
 
 const NavItem = styled(Link)`
@@ -108,9 +129,16 @@ const NavItem = styled(Link)`
   justify-content: ${({ isCollapsed }) => (isCollapsed ? "center" : "flex-start")};
   text-decoration: none;
   color: white;
+  font-size: 0.9rem;
 
   &:hover {
     background: #34495e;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+    margin: 0 5px;
+    padding: 10px;
   }
 `;
 
@@ -131,6 +159,12 @@ const LogoutButton = styled.button`
   &:hover {
     background: #c0392b;
   }
+
+  @media (max-width: 768px) {
+    width: auto;
+    font-size: 0.85rem;
+    padding: 10px;
+  }
 `;
 
 const MainContent = styled.div`
@@ -140,21 +174,38 @@ const MainContent = styled.div`
   margin-left: ${({ isCollapsed }) => (isCollapsed ? "90px" : "250px")};
   transition: margin-left 0.3s ease-in-out;
   min-height: 100vh;
+
+  @media (max-width: 768px) {
+    margin-left: 0;
+    padding: 10px;
+  }
 `;
 
 const Header = styled.div`
   text-align: center;
   padding-bottom: 20px;
-  height:70px;
+  height: 70px;
+  font-size: 1.2rem;
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+    padding-bottom: 10px;
+  }
 `;
 
 const ContentWrapper = styled.div`
   overflow-y: auto;
   max-height: calc(100vh - 60px);
   padding-bottom: 20px;
+
   &::-webkit-scrollbar {
     display: none;
   }
+
   scrollbar-width: none;
   -ms-overflow-style: none;
+
+  @media (max-width: 768px) {
+    padding-bottom: 10px;
+  }
 `;

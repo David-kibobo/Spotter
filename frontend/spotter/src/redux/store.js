@@ -6,6 +6,7 @@ import tripsReducer from "./slices/tripsSlice";
 import tripLogsReducer from "./slices/tripLogsSlice";
 import eldLogsReducer from "./slices/eldLogsSlice";
 import loadsReducer from "./slices/loadsSlice";
+import uiReducer from "./slices/uiSlice"
 
 export const store = configureStore({
   reducer: {
@@ -16,5 +17,6 @@ export const store = configureStore({
     tripLogs: tripLogsReducer,
     eldLogs: eldLogsReducer,
     loads: loadsReducer,
+    ui:uiReducer
   },
 });

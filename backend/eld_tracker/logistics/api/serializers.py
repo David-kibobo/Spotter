@@ -30,9 +30,13 @@ class LoadSerializer(serializers.ModelSerializer):
 
 
 class ELDLogSerializer(serializers.ModelSerializer):
+    driver_name = serializers.CharField(
+        source="driver.user.get_full_name", read_only=True
+    )
     class Meta:
         model = ELDLog
         fields = "__all__"
+        extra_fields = ["driver_name"]
 
     def validate(self, data):
         """

@@ -61,9 +61,10 @@ const LandingPage = () => {
       </MobileMenuAuthButtons> */}
     </NavContainer>
     <MobileAuthButtons>
-      <LoginButton>Login</LoginButton>
-      <SignupButton>Sign Up</SignupButton>
-    </MobileAuthButtons>
+  <LoginButton onClick={openLogin}>Login</LoginButton>
+  <SignupButton onClick={openSignup}>Sign Up</SignupButton>
+</MobileAuthButtons>
+
      {/* Auth Buttons for Desktop View (Hidden on Mobile) */}
     <DesktopAuthButtons>
       <LoginButton onClick={openLogin}>Login</LoginButton>
@@ -80,7 +81,7 @@ const LandingPage = () => {
   <HeroContent>
     <HeroTitle>Effortless Load Management for Truckers & Dispatchers</HeroTitle>
     <HeroText>Track trips, manage routes, and stay compliant with ease. Join us today!</HeroText>
-    <CTAButton>
+    <CTAButton onClick={openSignup}>
       Get Started <FaArrowRight />
     </CTAButton>
   </HeroContent>
@@ -130,7 +131,7 @@ const LandingPage = () => {
       {/* CTA Section */}
       <CTASection>
         <CTAHeading>Ready to Simplify Trucking?</CTAHeading>
-        <CTAButton>
+        <CTAButton onClick={openSignup}>
           Join Now <FaArrowRight />
         </CTAButton>
       </CTASection>

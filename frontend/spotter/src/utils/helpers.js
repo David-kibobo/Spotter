@@ -35,7 +35,7 @@ export const roundTo6 = (num) => Math.round(num * 1e6) / 1e6;
 
 
 // Status mapping
-const statusMap = {
+export const statusMap = {
   "off_duty": "⚪ Off-Duty",
   "on_duty": "🔵 On-Duty",
   "driving": "🟢 Driving",
@@ -72,21 +72,20 @@ export function transformLogData(logs) {
   for (let i = 0; i < logs.length; i++) {
     const log = logs[i];
 
-    // Format the time from timestamp
     const time = formatTime(log.timestamp);
-
-    // Map the status
     const status = statusMap[log.hos_status] || "⚪ Off-Duty";
+    const remarks = log.remarks || "No remarks";
 
-    // Calculate duration using *this* log's own timestamp and endtime
     let duration = "N/A";
-    if (log.endtime) {
-      const startTime = new Date(log.timestamp);
-      const endTime = new Date(log.endtime);
+    const startTime = new Date(log.timestamp);
+
+    // If endtime is missing, use current time (in UTC)
+    const endTime = log.endtime ? new Date(log.endtime) : new Date();
+
+    // If endTime is after startTime, calculate duration
+    if (endTime > startTime) {
       duration = calculateDuration(startTime, endTime);
     }
-
-    const remarks = log.remarks || "No remarks";
 
     transformedLogs.push({
       time,
@@ -98,6 +97,7 @@ export function transformLogData(logs) {
 
   return transformedLogs;
 }
+
 
 
 // Frontend HOS enforcer
@@ -139,6 +139,27 @@ export const canChangeStatus = (newStatus, currentStatus, hosStats) => {
   return true;
 };
 
+export function getEightHourDrivingStatus(logs) {
+  const now = new Date();
+
+  for (const log of logs) {
+    if (log.hos_status === "driving") {
+      const start = new Date(log.timestamp);
+      const end = log.endtime ? new Date(log.endtime) : now;
+      const diffMinutes = (end - start) / 60000;
+
+      if (diffMinutes >= 480) {
+        return { status: "violation", duration: diffMinutes };
+      } else if (diffMinutes >= 450) {
+        return { status: "warning", duration: diffMinutes };
+      }
+    }
+  }
+
+  return { status: "ok", duration: 0 };
+}
+
+
 // Fuction to aggregate time by status for each day starting from midnight to the next midnight
 
 export function getHOSDurationsForDate(logs, selectedDate) {
@@ -149,19 +170,30 @@ export function getHOSDurationsForDate(logs, selectedDate) {
     onDutyToday: 0,
   };
 
-  // Set the start and end of the selected date
   const startOfDay = new Date(selectedDate);
   startOfDay.setHours(0, 0, 0, 0);
+
   const endOfDay = new Date(selectedDate);
   endOfDay.setHours(23, 59, 59, 999);
 
+  const now = new Date();
+  const isToday = startOfDay.toDateString() === now.toDateString();
+
   logs.forEach(log => {
-    if (!log.endtime) return; // skip incomplete logs
-
     const start = new Date(log.timestamp);
-    const end = new Date(log.endtime);
 
-    // Only count the part of the log that overlaps with the selected date range
+    let end;
+    if (log.endtime) {
+      end = new Date(log.endtime);
+    } else {
+      // If ongoing and the day is today, cap at current time
+      end = isToday ? now : endOfDay;
+    }
+
+    // Skip logs completely outside the day
+    if (end < startOfDay || start > endOfDay) return;
+
+    // Clip to within selected day
     const adjustedStart = start < startOfDay ? startOfDay : start;
     const adjustedEnd = end > endOfDay ? endOfDay : end;
 
@@ -169,6 +201,7 @@ export function getHOSDurationsForDate(logs, selectedDate) {
     if (diffMs <= 0) return;
 
     const diffMins = Math.floor(diffMs / 60000);
+    console.log(`Status: ${log.hos_status}, Start: ${adjustedStart}, End: ${adjustedEnd}, Duration: ${diffMins} mins`);
 
     switch (log.hos_status) {
       case 'driving':
@@ -188,8 +221,11 @@ export function getHOSDurationsForDate(logs, selectedDate) {
     }
   });
 
+  console.log("Result for this day:", result);
   return result;
 }
+
+
 
 export function formatMinutes(mins) {
   const hours = Math.floor(mins / 60);

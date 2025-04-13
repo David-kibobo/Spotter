@@ -1,38 +1,65 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import MapComponent from "./maps/MapComponent";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchELDLogs, fetchActiveTrips, fetchDrivers, fetchTrips, fetchTripLogs } from "../../api/endPoints"; 
+import { format } from "date-fns";
+import { statusMap } from "../../utils/helpers";
+import MapView from "./maps/MapView";
+
 const DashboardHome = () => {
+  const dispatch = useDispatch();
   const [userRole, setUserRole] = useState(null);
 
-  const logsToday = [
-    { id: 1, driver: "John Doe", time: "10:30 AM", status: "🟢 Driving", location: "New York, NY" },
-    { id: 2, driver: "Sarah Lee", time: "11:15 AM", status: "🔵 Sleeper Berth", location: "Los Angeles, CA" },
-    { id: 3, driver: "Mike Ross", time: "12:00 PM", status: "⚪ Off-Duty", location: "Dallas, TX" },
-  ];
+
+  
+  const logsToday = useSelector((state) => state.eldLogs?.eldLogs?.data);
+  // const drivers = useSelector((state) => state.drivers?.drivers?.data ?? []);
+  const activeTrips = useSelector((state) => state.trips?.activeTrips); 
+  const trips=useSelector((state) => state.trips?.trips); 
+  const allTripLogs=useSelector((state)=> state.tripLogs?.tripLogs)
+
+
+// Transforming logs data to our desired form for presentation
+const displayLogs = logsToday?.map((log) => ({
+  id: log.id,
+  driver: `${log.driver_name || "Unknown"}`,
+  time: format(new Date(log.timestamp), "hh:mm a"),
+  status: statusMap[log.hos_status] || log.hos_status,
+  location: log.location_name || "Unknown Location",
+}));
+
+  useEffect(() => {
+    dispatch(fetchELDLogs());
+  dispatch(fetchTrips());
+    dispatch(fetchActiveTrips());
+    dispatch(fetchTripLogs());
+  }, [dispatch]);
 
   return (
     <Content>
       {/* Overview Section */}
       <Overview>
-        <StatCard>🚛 Active Trips: <span>5</span></StatCard>
-        <StatCard>📄 Logs Today: <span>{logsToday.length}</span></StatCard>
-        {userRole === "carrier" || userRole === "dispatcher" ? (
+        <StatCard>🚛 Active Trips: <span>{trips?.length}</span></StatCard>
+        <StatCard>📄 Logs Today: <span>{logsToday?.length}</span></StatCard>
+        {(userRole === "carrier" || userRole === "dispatcher") && (
           <StatCard>⚠️ Violations: <span>1</span></StatCard>
-        ) : null}
+        )}
       </Overview>
 
       {/* Map Section */}
       <MapContainer>
-        <MapComponent userRole={userRole} />
+        {/* <MapComponent userRole={userRole} /> */}
+        <MapView trips={trips} tripLogsAll={allTripLogs}/>
       </MapContainer>
 
       {/* Logs Section */}
-      <LogsContainer>
-        <h3>Today's ELD Logs</h3>
-        {logsToday.map((log, index) => (
-          <p key={index}>{log.driver} - {log.time} - {log.status}</p>
-        ))}
-      </LogsContainer>
+       <LogsContainer>
+      <h3>Today's ELD Logs</h3>
+      {displayLogs?.map((log) => (
+        <p key={log.id}>{log.driver} - {log.time} - {log.status}</p>
+      ))}
+    </LogsContainer>
     </Content>
   );
 };

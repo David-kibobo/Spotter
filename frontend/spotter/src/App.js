@@ -9,13 +9,18 @@ import Dashboard from './components/dashboard/dashboardLayout';
 import MapPage from './components/dashboard/maps/MapPage';
 import ELDLogsPage from './components/dashboard/ELD/ELDLogsPage';
 import TripsPage from './components/dashboard/Trips/TripsPage';
-import SettingsPage from './components/dashboard/SettingsPage';
+import SettingsPage from './components/dashboard/settings/SettingsPage';
 import DashboardHome from './components/dashboard/Home';
 import AdminPanel from './components/dashboard/AdminPanel';
 import { fetchCurrentUser } from './api/endPoints';
 import ELDLogsView from './components/dashboard/ELD/ELDLogsView';
 import CarrierELDLogs from './components/dashboard/ELD/CarrierELDLogs';
 import DriverELDLogs from './components/dashboard/ELD/DriverELDLogs';
+import { ToastContainer } from 'react-toastify';
+import GlobalSpinner from './utils/GloberSpinner';
+import { GlobalStyle } from './styles/GlobalStyles';
+import RequireAuth from './utils/RequireAuth';
+import DriverHomePage from './components/dashboard/DriversHomePage';
 function App() {
 
   const dispatch = useDispatch();
@@ -27,12 +32,15 @@ function App() {
     }
   }, [dispatch, user, status]); 
   const DashboardRoutes=()=>{
+    const getHomeComponent = () => {
+      if (user?.role === "Driver") return <DriverHomePage />;
+      return <DashboardHome />; // Default: carrier owner or dispatcher
+    };
       return(
         <Routes>
           <Route path= '/' element={<Dashboard />}>
-          <Route index element={<DashboardHome />} />
+          <Route index element={getHomeComponent()} />
           <Route path= '/view-map' element={<MapPage/>}/>
-          {/* <Route path= '/eld-logs' element={<ELDLogsPage/>}/> */}
           <Route path="/eld-logs/carrier" element={<CarrierELDLogs />} />
           <Route path="/eld-logs/driver" element={<DriverELDLogs />} />
 
@@ -48,11 +56,22 @@ function App() {
 
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
+      <GlobalStyle/>
+      <GlobalSpinner/>  {/* Only shows when any request is loading */}
+       <ToastContainer position="top-right" autoClose={3000} />
+       <Routes>
+  <Route path="/" element={<LandingPage />} />
 
-         <Route path= "/dashboard/*" element={<DashboardRoutes />}/>
-      </Routes>
+  {/* Auto redirect based on role */}
+  <Route path="/dashboard-redirect" element={<RequireAuth />} />
+
+  {/* Carrier / Dispatcher */}
+  <Route path="/dashboard/*" element={<DashboardRoutes />} />
+
+  {/* Driver-only homepage */}
+  <Route path="/dashboard/driver" element={<DriverHomePage />} />
+</Routes>
+
     </Router>
   );
 }

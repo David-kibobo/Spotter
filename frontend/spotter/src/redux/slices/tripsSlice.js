@@ -1,11 +1,15 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { createTrip, fetchTrips, updateTrip, deleteTrip, fetchDriverTrips } from "../../api/endPoints";
+import { createTrip, fetchTrips, updateTrip, deleteTrip, fetchDriverTrips,fetchActiveTrips } from "../../api/endPoints";
 
 const initialState = {
   trips: [],
+  activeTrips: [],
   loading: false,
+  activeTripsLoading: false,
   error: null,
+  activeTripsError: null,
 };
+
 
 const tripsSlice = createSlice({
   name: "trips",
@@ -43,6 +47,23 @@ const tripsSlice = createSlice({
       .addCase(fetchDriverTrips.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || "Failed to fetch driver trips";
+      })
+      
+       // Fetch Active Trips
+       .addCase(fetchActiveTrips.pending, (state) => {
+        state.activeTripsLoading = true;
+        state.activeTripsError = null;
+      })
+      .addCase(fetchActiveTrips.fulfilled, (state, action) => {
+        state.activeTripsLoading = false;
+        state.activeTrips = Array.isArray(action.payload?.data)
+          ? action.payload.data
+          : [];
+      })
+      .addCase(fetchActiveTrips.rejected, (state, action) => {
+        state.activeTripsLoading = false;
+        state.activeTripsError =
+          action.payload || "Failed to fetch active trips";
       })
 
       // Create Trip

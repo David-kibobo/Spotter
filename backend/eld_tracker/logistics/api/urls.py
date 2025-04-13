@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import TripAPIView, ActiveTripListAPIView, TripLogListCreateAPIView, DriverTripsAPIView, TripLogDetailAPIView, ELDLogListCreateAPIView, ELDLogDetailAPIView, LoadListCreateAPIView, LoadDetailAPIView
+from .views import TripAPIView, ActiveTripListAPIView, TripLogListCreateAPIView, DriverTripsAPIView, DriverHOSStatsAPIView, TripLogDetailAPIView, ELDLogListCreateAPIView, ELDLogDetailAPIView, LoadListCreateAPIView, LoadDetailAPIView
 
 urlpatterns = [
     # Trip API Endpoints
@@ -11,8 +11,10 @@ urlpatterns = [
 
 
     # TripLog API Endpoints
+    path("trip-logs/", TripLogListCreateAPIView.as_view(), name="all-active-trip-logs"),
     path('trips/<uuid:trip_id>/logs/', TripLogListCreateAPIView.as_view(), name='trip-log-list-create'),
     path('trips/logs/<uuid:log_id>/', TripLogDetailAPIView.as_view(), name='trip-log-detail'),
+    
 
     # ELDLog API Endpoints
     path('eld-logs/', ELDLogListCreateAPIView.as_view(), name='eld-log-list-create'),
@@ -24,4 +26,11 @@ urlpatterns = [
     path('loads/', LoadListCreateAPIView.as_view(), name='load-list-create'),
     path('loads/<uuid:trip_id>/', LoadListCreateAPIView.as_view(), name='load-list-create'),
     path('loads/<uuid:load_id>/', LoadDetailAPIView.as_view(), name='load-detail'),
+    
+    # Driver HosStats
+ 
+
+    path("hos/stats/<int:driver_id>/", DriverHOSStatsAPIView.as_view(), name="hos-stats"),
+
+
 ]

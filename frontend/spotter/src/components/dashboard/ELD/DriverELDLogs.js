@@ -6,6 +6,7 @@ import {
   fetchDriverTrips,
   updateTrip,
   createTripLog,
+  fetchDriverHosStats,
 } from "../../../api/endPoints";
 import ELDLogsView from "./ELDLogsView";
 import StatusToggle from "./StatusToggle";
@@ -21,6 +22,7 @@ const DriverELDLogs = () => {
   const { user } = useSelector((state) => state.auth);
   const logs = useSelector((state) => state.eldLogs?.eldLogs?.data ?? []);
   const trips = useSelector((state) => state.trips?.trips??[]);
+  const hosStats = useSelector((state) => state.drivers?.hosStats ?? {});
 
   const activeTrips = trips?.filter(
     (trip) => trip.status === "scheduled" || trip.status === "in_progress"
@@ -31,13 +33,15 @@ const currentTrip = trips?.find((trip) => trip.status === "in_progress");
 const currentTripId = currentTrip?.id;
 const isActiveTrip = currentTrip?.status === "in_progress";
 
+// This hook will help log live locations using GPS when we have active trip
 // useTripLogger(currentTripId, isActiveTrip);
 
-console.log('Druver Trips', trips)
+
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [currentStatus, setCurrentStatus] = useState("off_duty");
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [pendingStatus, setPendingStatus] = useState(null);
+   const [latestMiles, setLatestMiles] = useState(0);
   const [currentLocation, setCurrentLocation] = useState({
     latitude: "",
     longitude: "",
@@ -54,24 +58,18 @@ console.log('Druver Trips', trips)
 
   
 
-  const [hosStats, setHosStats] = useState({
-    totalLast7Days: 0,
-    totalToday: 0,
-    availableHoursTomorrow: 0,
-    consecutiveOffDutyHours: 0,
-    lastFuelingMiles: 0,
-    totalMiles: 0,
-  });
+ 
 
   const locationFetched = useRef(false); // Prevent repeated setting
 
   const driver = {
+    driverId:user?.driver_profile_id,
     name: user?.first_name,
     coDriver: "None",
     truckNumber: "#1023",
     carrier: user?.carrier_data?.name,
     carrierAddress: user?.carrier_data?.address,
-    totalMiles: 450,
+    totalMiles: latestMiles,
   };
 
   // Geolocation function
@@ -184,6 +182,7 @@ console.log('Druver Trips', trips)
 
       await dispatch(createELDLog(payload));
       dispatch(fetchELDLogsByDriver(user?.driver_profile_id));
+      dispatch(fetchDriverHosStats(user?.driver_profile_id));
 
       if (currentTripId) {
         await dispatch(createTripLog({ currentTripId, tripLogData }));
@@ -203,14 +202,8 @@ console.log('Druver Trips', trips)
       const latestLog = sortedLogs[sortedLogs.length - 1];
 
       setCurrentStatus(latestLog.hos_status || "off_duty");
-      setHosStats({
-        totalLast7Days: parseFloat(latestLog.total_hours_past_8_days),
-        totalToday: parseFloat(latestLog.total_hours_last_5_days),
-        availableHoursTomorrow: parseFloat(latestLog.available_hours_tomorrow),
-        consecutiveOffDutyHours: parseFloat(latestLog.consecutive_off_duty_hours),
-        lastFuelingMiles: parseFloat(latestLog.distance_covered),
-        totalMiles: parseFloat(latestLog.distance_covered),
-      });
+      setLatestMiles(latestLog.distance_covered || 0);
+    
     }
   }, [logs]);
 
@@ -224,7 +217,7 @@ console.log('Druver Trips', trips)
         activeStatus={currentStatus}
         hosStats={hosStats}
       />
-
+     
       <ELDLogsView
         driver={driver}
         logs={logs}

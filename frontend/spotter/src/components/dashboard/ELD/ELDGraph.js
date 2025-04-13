@@ -93,11 +93,59 @@ const ELDGraph = ({ logs }) => {
       },
     },
   };
-
+  // const options = {
+  //   responsive: true,
+  //   maintainAspectRatio: false, // Keep this false so it fills container
+  //   plugins: {
+  //     legend: {
+  //       display: false,
+  //     },
+  //   },
+  //   scales: {
+  //     x: {
+  //       ticks: {
+  //         autoSkip: true,
+  //         maxTicksLimit: 12,
+  //       },
+  //       grid: {
+  //         display: true,
+  //       },
+  //     },
+  //     y: {
+  //       min: 0,
+  //       max: 3,
+  //       ticks: {
+  //         stepSize: 1,
+  //         callback: (value) => ["Off-Duty", "Sleeper Berth", "On-Duty", "Driving"][value],
+  //       },
+  //       grid: {
+  //         display: true,
+  //       },
+  //     },
+  //   },
+  // };
+  
   return (
-    <div style={{ height: "300px", width: "100%", padding: "10px" }}>
-      <Line data={data} options={options} />
-    </div>
+//     <div
+//   style={{
+//     height: "200px",
+//     width: "100%",
+//     padding: "10px",
+//     display: "flex",
+//     justifyContent: "center",
+//   }}
+// >
+  <div
+    style={{
+      width: "100%",
+      // maxWidth: "1000px", // Or remove if not needed
+      height: "100%",
+    }}
+  >
+    <Line data={data} options={options} />
+
+</div>
+
   );
 };
 

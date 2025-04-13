@@ -1,7 +1,12 @@
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from django.utils.timezone import make_aware, now
+from django.utils.dateparse import parse_date
+from datetime import datetime
+from django.db.models import Q
 from django.utils import timezone
+from utils.validators import calculate_hos_hours
 from ..models import Trip, TripLog, ELDLog, Trip, DriverProfile, Load
 from .serializers import (
     TripSerializer,
@@ -116,7 +121,31 @@ class DriverTripsAPIView(APIView):
             "Scheduled trips retrieved for driver.", serializer.data
         )
 
+class DriverHOSStatsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request, driver_id=None):
+        try:
+            if driver_id:
+                driver_profile = DriverProfile.objects.get(id=driver_id)
+            else:
+                driver_profile = DriverProfile.objects.get(user=request.user)
+        except DriverProfile.DoesNotExist:
+            return error_response("Driver not found.", status=404)
+
+        # Parse optional ?date=YYYY-MM-DD
+        date_param = request.query_params.get("date")
+        if date_param:
+            parsed_date = parse_date(date_param)
+            if not parsed_date:
+                return error_response("Invalid date format. Use YYYY-MM-DD.", status=400)
+            # Convert to aware datetime for timezone safety
+            target_date = make_aware(datetime.combine(parsed_date, datetime.min.time()))
+        else:
+            target_date = None
+
+        stats = calculate_hos_hours(driver_profile, target_date)
+        return success_response("HOS stats fetched successfully", stats)
 class ActiveTripListAPIView(APIView):
     """
     API to get all active trips (scheduled & in progress).
@@ -128,31 +157,40 @@ class ActiveTripListAPIView(APIView):
         return success_response("Active trips retrieved successfully", serializer.data)
 
 
+
+
 class TripLogListCreateAPIView(APIView):
     """
-    API to list all logs for a trip and allow manual log creation.
+    GET (with trip_id): Logs for a specific trip.
+    GET (without trip_id): Logs for all active trips.
+    POST (with trip_id): Add a new log for a specific trip.
     """
 
-    def get(self, request, trip_id):
-        trip = get_object_or_error(Trip, id=trip_id)
-        # if isinstance(trip, Response):  # Handle Not Found
-        #     return trip
+    def get(self, request, trip_id=None):
+        if trip_id:
+            trip = get_object_or_error(Trip, id=trip_id)
+            logs = TripLog.objects.filter(trip=trip).order_by("-timestamp")
+            serializer = TripLogSerializer(logs, many=True)
+            return success_response("Trip logs retrieved successfully", serializer.data)
+        
+        # 🔥 Get logs for all active trips
+        active_trips = Trip.objects.filter(status="completed")
+        all_logs = []
 
-        logs = TripLog.objects.filter(trip=trip).order_by("-timestamp")
-        serializer = TripLogSerializer(logs, many=True)
-        return success_response("Trip logs retrieved successfully", serializer.data)
+        for trip in active_trips:
+            logs = trip.logs.order_by("timestamp")
+            serialized_logs = TripLogSerializer(logs, many=True).data
+            all_logs.extend(serialized_logs)
+         
+
+        return success_response("Logs for all active trips retrieved", all_logs)
 
     def post(self, request, trip_id):
         trip = get_object_or_error(Trip, id=trip_id)
-        # if isinstance(trip, Response):  # Handle Not Found
-        #     return trip
-
         data = request.data.copy()
-     
         data["trip"] = trip.id
-        print('data is:', data)
-        serializer = TripLogSerializer(data=data)
 
+        serializer = TripLogSerializer(data=data)
         error_response_data = validate_serializer(serializer)
         if error_response_data:
             return error_response_data
@@ -182,41 +220,57 @@ class ELDLogListCreateAPIView(APIView):
     API to list all ELD logs and allow manual creation of new logs.
     """
 
-
-class ELDLogListCreateAPIView(APIView):
-    """
-    API to list all ELD logs and allow manual creation of new logs.
-    """
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, driver_id=None, trip_id=None):
         """
-        Retrieve all ELD logs for a specific driver or trip.
+        Retrieve ELD logs, optionally filtered by driver, trip, or date.
+        If no driver or trip is passed, returns all logs for today for the carrier.
         """
         carrier = request.user.carrier
+        selected_date = request.query_params.get("date")  # Format: YYYY-MM-DD
+
+        logs_qs = ELDLog.objects.none()
+
+        # ⏰ Setup date range
+        start, end = None, None
+        if selected_date:
+            try:
+                selected_date = datetime.strptime(selected_date, "%Y-%m-%d").date()
+            except ValueError:
+                return error_response("Invalid date format. Use YYYY-MM-DD.", status.HTTP_400_BAD_REQUEST)
+        else:
+            # Default to today if no date is passed
+            selected_date = now().date()
+
+        start = make_aware(datetime.combine(selected_date, datetime.min.time()))
+        end = make_aware(datetime.combine(selected_date, datetime.max.time()))
+
+        # 🔍 Filtering logic
         if driver_id:
             driver = get_object_or_error(DriverProfile, id=driver_id)
-            logs = ELDLog.objects.filter(driver=driver).order_by("-timestamp")
-            if not logs.exists():
-                return error_response(
-                    "No logs found for the specified driver", status.HTTP_404_NOT_FOUND
-                )
+            logs_qs = ELDLog.objects.filter(driver=driver)
+
         elif trip_id:
             trip = get_object_or_error(Trip, id=trip_id)
-            logs = ELDLog.objects.filter(trip=trip).order_by("-timestamp")
-            if not logs.exists():
-                return error_response(
-                    "No logs found for the specified trip", status.HTTP_404_NOT_FOUND
-                )
+            logs_qs = ELDLog.objects.filter(trip=trip)
+
         else:
-            logs = ELDLog.objects.filter(driver__carrier=carrier).order_by("-timestamp")
-            if not logs.exists():
-                return error_response(
-                    "No logs have been created yet", status.HTTP_404_NOT_FOUND
-                )
+            # ✅ Return all logs for today for the carrier
+            logs_qs = ELDLog.objects.filter(driver__carrier=carrier)
 
-        serializer = ELDLogSerializer(logs, many=True)
-        return success_response("ELD logs retrieved successfully.", serializer.data)
+        # 🧠 Apply date overlap filter
+        logs_qs = logs_qs.filter(timestamp__lte=end).filter(
+            Q(endtime__isnull=True) | Q(endtime__gte=start)
+        )
 
+        logs_qs = logs_qs.select_related("driver", "trip").order_by("-timestamp")
+
+        if not logs_qs.exists():
+            return error_response("No logs found for the selected filters.", status.HTTP_404_NOT_FOUND)
+
+        serialized_logs = ELDLogSerializer(logs_qs, many=True).data
+        return success_response("ELD logs fetched successfully", serialized_logs)
     def post(self, request):
         """
         Allow drivers to manually create an ELD log entry.

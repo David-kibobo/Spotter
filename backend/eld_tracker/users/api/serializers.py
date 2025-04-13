@@ -22,12 +22,20 @@ class CarrierSignupSerializer(serializers.Serializer):
 
 # serializers.py
 
+#TruckSerializer
+
+class TruckSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=Truck
+        fields=["truck_number", "make", "model"]
+
+
 class CarrierSerializer(serializers.ModelSerializer):
     class Meta:
         model = Carrier  
         fields = ['id', 'name', 'address',]  
 
-# serializers.py
+# Userserializers.py
 
 class UserSerializer(serializers.ModelSerializer):
     carrier_data = CarrierSerializer(source='carrier', read_only=True)  # Nested CarrierSerializer
@@ -61,10 +69,12 @@ class DriverSignupSerializer(serializers.Serializer):
         return value
 class DriverListSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField(read_only=True)
+    carrier_data = CarrierSerializer(source='carrier', read_only=True)
+    truck_data=TruckSerializer(source='truck', read_only=True)
 
     class Meta:
         model = DriverProfile
-        fields = ["id", "user", "license_number", "truck"]
+        fields = ["id", "user", "license_number", "truck", "carrier_data", "truck_data"]
 
     def get_user(self, obj):
         """Returns user details as a nested object"""

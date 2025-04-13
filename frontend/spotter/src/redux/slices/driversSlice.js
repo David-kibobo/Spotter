@@ -1,16 +1,25 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { createDriver, fetchDrivers, updateDriver } from "../../api/endPoints";
+import {
+  createDriver,
+  fetchDrivers,
+  updateDriver,
+  fetchDriverHosStats,
+} from "../../api/endPoints";
 
 const driverSlice = createSlice({
   name: "drivers",
   initialState: {
     drivers: [],
+    hosStats: null,
     loading: false,
     error: null,
   },
   reducers: {
     clearError: (state) => {
       state.error = null;
+    },
+    clearHosStats: (state) => {
+      state.hosStats = null;
     },
   },
   extraReducers: (builder) => {
@@ -22,7 +31,7 @@ const driverSlice = createSlice({
       })
       .addCase(createDriver.fulfilled, (state, action) => {
         state.loading = false;
-        state.drivers.push(action.payload); // ✅ Add new driver
+        state.drivers.push(action.payload);
         state.error = null;
       })
       .addCase(createDriver.rejected, (state, action) => {
@@ -38,6 +47,7 @@ const driverSlice = createSlice({
       .addCase(fetchDrivers.fulfilled, (state, action) => {
         state.loading = false;
         state.drivers = action.payload;
+        state.error = null;
       })
       .addCase(fetchDrivers.rejected, (state, action) => {
         state.loading = false;
@@ -51,25 +61,33 @@ const driverSlice = createSlice({
       })
       .addCase(updateDriver.fulfilled, (state, action) => {
         state.loading = false;
-         // Ensure state.drivers is an array before performing findIndex
-        if (Array.isArray(state.drivers)) {
-          const updatedDriverIndex = state.drivers.findIndex(driver => driver.id === action.payload.id);
-          if (updatedDriverIndex >= 0) {
-            state.drivers[updatedDriverIndex] = action.payload; // ✅ Update the driver in the list
-          }
-        } else {
-          console.error("Expected 'state.drivers' to be an array.");
+        const index = state.drivers.findIndex(d => d.id === action.payload.id);
+        if (index !== -1) {
+          state.drivers[index] = action.payload;
         }
-      
         state.error = null;
       })
-      
       .addCase(updateDriver.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // 🔹 FETCH DRIVER HOS STATS
+      .addCase(fetchDriverHosStats.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchDriverHosStats.fulfilled, (state, action) => {
+        state.loading = false;
+        state.hosStats = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchDriverHosStats.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });
   },
 });
 
-export const { clearError } = driverSlice.actions;
+export const { clearError, clearHosStats } = driverSlice.actions;
 export default driverSlice.reducer;

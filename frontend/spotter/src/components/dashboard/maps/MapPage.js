@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker, Polyline, Popup } from "react-leaflet";
+import { TileLayer, Marker, Polyline, Popup } from "react-leaflet";
 import L from "leaflet";
 import styled from "styled-components";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchTripLogs, fetchTrips, fetchDrivers} from "../../../api/endPoints";
+import { fetchTripLogs, fetchTrips, fetchDrivers } from "../../../api/endPoints";
+import MapView from "./MapView";
 
 
 // Marker Icons
@@ -50,20 +51,20 @@ const MapPage = () => {
       if (pathCoords.length !== 0) setPathCoords([]);
       return;
     }
-  
+
     const coords = tripLogs.map((log) => [log.latitude, log.longitude]);
-  
+
     const isSame =
       coords.length === pathCoords.length &&
       coords.every((coord, i) =>
         coord[0] === pathCoords[i]?.[0] && coord[1] === pathCoords[i]?.[1]
       );
-  
+
     if (!isSame) {
       setPathCoords(coords);
     }
   }, [tripLogs]);
-  
+
   const start = pathCoords[0];
   const current = pathCoords[pathCoords.length - 1];
   const destination =
@@ -93,57 +94,14 @@ const MapPage = () => {
       </TripSelector>
 
       {current && (
-        <MapContainer
-          center={current}
-          zoom={6}
-          scrollWheelZoom={true}
-          style={{ height: "500px", width: "100%" }}
-        >
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          
-            {/* Outer trail (glow effect) */}
-<Polyline
-  positions={pathCoords}
-  pathOptions={{
-    color: "#fff",       // white glow
-    weight: 14,          // thicker than main line
-    opacity: 0.9,
-  }}
-/>
+        <MapContainer>
 
-{/* Main red path */}
-<Polyline
-  positions={pathCoords}
-  pathOptions={{
-    color: "#d32f2f",    
-    weight: 6,
-    opacity: 1,
-  }}
-/>
+       <MapView selectedTrip={selectedTrip}/>
 
           
-
-
-          {start && (
-            <Marker position={start} icon={startIcon}>
-              <Popup>Start Location</Popup>
-            </Marker>
-          )}
-
-          <Marker position={current} icon={currentIcon}>
-            <Popup>Current Position</Popup>
-          </Marker>
-
-          {destination && (
-            <Marker position={destination} icon={destinationIcon}>
-              <Popup>Destination</Popup>
-            </Marker>
-          )}
-
-          {pathCoords.length > 1 && <Polyline positions={pathCoords} color="blue" />}
-        </MapContainer>
-      )}
-    </Container>
+</MapContainer>  )
+      }
+    </Container >
   );
 };
 
@@ -162,4 +120,13 @@ const TripSelector = styled.div`
   select {
     padding: 5px;
   }
+`;
+
+const MapContainer = styled.div`
+  background: #ddd;
+  height: 300px;
+  margin: 20px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;

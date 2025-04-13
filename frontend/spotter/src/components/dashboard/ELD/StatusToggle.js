@@ -60,15 +60,23 @@ const StatusToggle = ({ onStatusChange, activeStatus, hosStats }) => {
 };
 
 
+
 const StatusContainer = styled.div`
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: 8px;
   background: #222;
   padding: 10px;
   border-radius: 10px;
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    padding: 8px;
+    gap: 6px;
+  }
 `;
 
 const StatusButton = styled.button`
@@ -79,20 +87,30 @@ const StatusButton = styled.button`
   background: ${({ color, isActive }) => (isActive ? color : "#555")};
   border: none;
   border-radius: 20px;
-  
   cursor: ${({ disabled }) => (disabled ? "not-allowed" : "pointer")};
   transition: transform 0.2s ease, background 0.2s ease;
   position: relative;
   transform: ${({ isActive }) => (isActive ? "translateY(-5px)" : "translateY(0)")};
+
   ${({ isActive, blinkColor }) =>
     isActive &&
     css`
       animation: ${blink} 1s infinite;
       background: ${blinkColor};
     `}
+
   &:hover {
     opacity: 0.8;
   }
+
+  @media (max-width: 600px) {
+    padding: 10px 14px;
+    font-size: 13px;
+    width: 100%;
+    text-align: center;
+    border-radius: 12px;
+  }
 `;
+
 
 export default StatusToggle;

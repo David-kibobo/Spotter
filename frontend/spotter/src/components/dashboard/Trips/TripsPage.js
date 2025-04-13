@@ -509,7 +509,7 @@ const TripsPage = () => {
   const [selectedTrip, setSelectedTrip] = useState(null);
 
   const drivers = useSelector((state) => state.drivers?.drivers?.data ?? []);
-  const trucks = useSelector((state) => state.trucks?.trucks?.data ?? []);
+  const trucks = useSelector((state) => state.trucks?.trucks.data?? []);
   const trips = useSelector((state) => state.trips?.trips ?? []);
   const { user } = useSelector((state) => state.auth);
 
@@ -549,14 +549,14 @@ const TripsPage = () => {
         <Header>
           {userRole=== "Driver" ?<h2>🚛 Your Trips</h2>:<h2>🚛 Manage Trips</h2>}
           {userRole !== "Driver" && (
-            <CreateTripButton onClick={() => setIsCreateTripModalOpen(true)}>➕ Create Trip</CreateTripButton>
+            <CreateTripButton  onClick={() => setIsCreateTripModalOpen(true)}>➕ Create Trip</CreateTripButton>
           )}
         </Header>
 
         {userRole === "Driver" ? (
           // Driver View: Show only the driver's trips
           <TripSection>
-            <DriversTripList trips={driverTrips} />
+            <DriversTripList trips={driverTrips} setSelectedTrip={setSelectedTrip} />
           </TripSection>
         ) : (
           // Dispatcher/Carrier Owner View: Show all trips
@@ -583,20 +583,26 @@ const TripsPage = () => {
       </MainPanel>
 
       {/* Create Trip Modal */}
-      {isCreateTripModalOpen && <CreateTripModal onClose={() => setIsCreateTripModalOpen(false)} />}
+      {isCreateTripModalOpen && <CreateTripModal trucks={trucks} drivers={drivers} onClose={() => setIsCreateTripModalOpen(false)} />}
 
       {/* Trip Details Modal */}
-      {selectedTrip && <TripDetailsModal trip={selectedTrip} onClose={() => setSelectedTrip(null)} />}
+      {selectedTrip && <TripDetailsModal trip={selectedTrip} onClose={() => setSelectedTrip(null)} userRole={userRole} />}
     </Container>
   );
 };
 
 export default TripsPage;
 
-// Styled Components
+//  Styled Components
+
 const Container = styled.div`
   display: flex;
   height: 100vh;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    height: auto;
+  }
 `;
 
 const Sidebar = styled.div`
@@ -604,6 +610,21 @@ const Sidebar = styled.div`
   background: #2c3e50;
   color: white;
   padding: 20px;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    padding: 15px;
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    justify-content: space-between;
+  }
+
+  @media (max-width: 480px) {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 8px;
+  }
 `;
 
 const NavButton = styled.button`
@@ -615,8 +636,22 @@ const NavButton = styled.button`
   margin-top: 10px;
   cursor: pointer;
   border-radius: 5px;
+  white-space: nowrap;
+
   &:hover {
     background: #1f2f3d;
+  }
+
+  @media (max-width: 768px) {
+    width: auto;
+    margin-top: 0;
+    margin-right: 10px;
+    padding: 8px 12px;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 12px;
+    padding: 6px 10px;
   }
 `;
 
@@ -625,12 +660,23 @@ const MainPanel = styled.div`
   background: #f8f9fa;
   padding: 20px;
   overflow-y: auto;
+
+  @media (max-width: 768px) {
+    padding: 15px;
+  }
 `;
 
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
 `;
 
 const CreateTripButton = styled.button`
@@ -640,8 +686,15 @@ const CreateTripButton = styled.button`
   border: none;
   border-radius: 5px;
   cursor: pointer;
+  white-space: nowrap;
+
   &:hover {
     background: #2980b9;
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px 12px;
+    font-size: 14px;
   }
 `;
 
@@ -658,7 +711,14 @@ const TripCard = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
   cursor: pointer;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
 `;
 
 const NoTrips = styled.p`

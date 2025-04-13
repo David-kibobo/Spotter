@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 import { useDispatch, useSelector } from "react-redux";
-import { loginUser } from "../../api/endPoints";
+import { loginUser, fetchCurrentUser } from "../../api/endPoints";
 import { useNavigate } from "react-router-dom";
 
 const LoginModal = ({ onClose, onSwitch }) => {
@@ -19,16 +19,27 @@ const LoginModal = ({ onClose, onSwitch }) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Handle form submission
+ 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     const resultAction = await dispatch(loginUser(formData));
-
+  
     if (loginUser.fulfilled.match(resultAction)) {
-      navigate("/dashboard"); // Redirect to dashboard on success
+      // ✅ Fetch user info before redirecting
+      const userResult = await dispatch(fetchCurrentUser());
+  
+      if (fetchCurrentUser.fulfilled.match(userResult)) {
+        navigate("/dashboard"); // 🎯 universal dashboard route
+      } else {
+        console.error("Failed to fetch user after login.");
+      }
+    } else {
+      console.error("Login failed.");
     }
   };
+  
 
   return (
     <ModalOverlay>

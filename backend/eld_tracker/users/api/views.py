@@ -129,3 +129,29 @@ class MeView(APIView):
 
     def get(self, request):
         return Response(UserSerializer(request.user).data)
+
+
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        current_password = request.data.get("current_password")
+        new_password = request.data.get("new_password")
+        confirm_password = request.data.get("confirm_password")
+
+        # Check if current password is correct
+        if not user.check_password(current_password):
+            return error_response(message="Current password is incorrect")
+
+        # Check if new passwords match
+        if new_password != confirm_password:
+            return error_response(message="New passwords do not match")
+
+        # Optionally: Add password validation here (length, strength etc.)
+
+        user.set_password(new_password)
+        user.save()
+
+        return success_response(message="Password changed successfully")

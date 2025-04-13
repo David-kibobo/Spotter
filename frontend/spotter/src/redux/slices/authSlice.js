@@ -1,13 +1,18 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { loginUser, fetchCurrentUser, signupUser, logoutUser } from "../../api/endPoints";
+
+import { signupUser, fetchCurrentUser, logoutUser, loginUser, changePassword } from "../../api/endPoints";
+
+
 
 const authSlice = createSlice({
   name: "auth",
   initialState: {
     user: null,
-    status: "idle", // "idle" | "loading" | "succeeded" | "failed"
-    loading: false,  // General loading state
+    status: "idle", // For fetching current user
+    loading: false, // General loading state
     error: null,
+    passwordChangeStatus: "idle", // "idle" | "loading" | "succeeded" | "failed"
+    passwordChangeError: null,
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -20,7 +25,7 @@ const authSlice = createSlice({
       .addCase(loginUser.fulfilled, (state, action) => {
         state.loading = false;
         state.user = action.payload;
-        localStorage.setItem("access_token", action.payload.message.access); 
+        localStorage.setItem("access_token", action.payload.message.access);
         state.error = null;
       })
       .addCase(loginUser.rejected, (state, action) => {
@@ -45,7 +50,7 @@ const authSlice = createSlice({
 
       // 🔹 FETCH CURRENT USER
       .addCase(fetchCurrentUser.pending, (state) => {
-        if (state.status === "idle") { // ✅ Prevents unnecessary refetching
+        if (state.status === "idle") {
           state.status = "loading";
         }
       })
@@ -55,14 +60,28 @@ const authSlice = createSlice({
       })
       .addCase(fetchCurrentUser.rejected, (state, action) => {
         state.status = "failed";
-        state.user = null;  // ✅ Remove user if fetch fails
+        state.user = null;
         state.error = action.payload || "Failed to fetch user";
       })
 
       // 🔹 LOGOUT USER
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
-        state.status = "idle";  // ✅ Reset status to allow re-fetching after logout
+        state.status = "idle";
+      })
+
+      // 🔹 CHANGE PASSWORD
+      .addCase(changePassword.pending, (state) => {
+        state.passwordChangeStatus = "loading";
+        state.passwordChangeError = null;
+      })
+      .addCase(changePassword.fulfilled, (state) => {
+        state.passwordChangeStatus = "succeeded";
+        state.passwordChangeError = null;
+      })
+      .addCase(changePassword.rejected, (state, action) => {
+        state.passwordChangeStatus = "failed";
+        state.passwordChangeError = action.payload;
       });
   },
 });

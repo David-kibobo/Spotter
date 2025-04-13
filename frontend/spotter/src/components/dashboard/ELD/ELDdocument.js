@@ -9,14 +9,7 @@ import ELDGraph from './ELDGraph';
 const PrintableELDLog = ({ driver, logs, onClose, hosStats, todayDurations, selectedDate }) => {
   const printRef = useRef();
 
-  const handleDownloadPDF = async () => {
-    if (!printRef.current) return;
-    const canvas = await html2canvas(printRef.current);
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    pdf.addImage(imgData, 'PNG', 10, 10, 180, 0);
-    pdf.save(`ELD_Log_${driver.name}.pdf`);
-  };
+const {total_hours_past_8_days, available_hours_tomorrow}=hosStats;
 
   const transformedData = transformLogData(logs);
 
@@ -82,9 +75,9 @@ const PrintableELDLog = ({ driver, logs, onClose, hosStats, todayDurations, sele
               <p><strong>Total Driving Today:</strong> {formatMinutes(todayDurations.drivingToday) || 0}</p>
               <p><strong>Total Rest (Off-Duty + Sleeper Berth):</strong> {formatMinutes((todayDurations.offDutyToday || 0) + (todayDurations.sleeperToday || 0))}</p>
               <p>
-                <strong>Last 7 Days:</strong> {`${hosStats.totalLast7Days}h (${hosStats.availableHoursTomorrow}h remaining)`}
+                <strong>Last 7 Days:</strong> {`${total_hours_past_8_days}h (${available_hours_tomorrow}h remaining)`}
               </p>
-              <Warning>⚠️ 34-hour reset required soon!</Warning>
+              {total_hours_past_8_days>=65 && <Warning>⚠️ 34-hour reset may be needed soon.</Warning>}
             </ComplianceSection>
           </StyledPrintArea>
           <PrintButton onClick={handlePrint}>🖨️ Print / Save as PDF</PrintButton>
@@ -96,9 +89,6 @@ const PrintableELDLog = ({ driver, logs, onClose, hosStats, todayDurations, sele
 
 export default PrintableELDLog;
 
-// Styled components remain unchanged
-
-// --- STYLED COMPONENTS --- (Keep your existing styles)
 const StyledPrintArea = styled.div`
   background: white;
   padding: 20px;
@@ -120,6 +110,10 @@ const ModalOverlay = styled.div`
   justify-content: center;
   z-index: 1000;
   padding: 20px;
+
+  @media print {
+    display: none;
+  }
 `;
 
 const ModalContent = styled.div`
@@ -132,6 +126,10 @@ const ModalContent = styled.div`
   max-height: 90vh;
   display: flex;
   flex-direction: column;
+
+  @media (max-width: 600px) {
+    padding: 15px;
+  }
 `;
 
 const ScrollableArea = styled.div`
@@ -139,20 +137,42 @@ const ScrollableArea = styled.div`
   overflow-y: auto;
   max-height: 70vh;
   padding-right: 10px;
+
+  @media (max-width: 600px) {
+    padding-right: 0;
+  }
 `;
 
 const CloseButton = styled.button`
-  position: absolute;
+  position: fixed; /* Make it fixed so it stays in view */
   top: 10px;
-  right: 15px;
-  border: none;
-  background: transparent;
-  color: black;  
-  font-size: 12px; 
+  right: 10px;
+  background: #fff;
+  border: 2px solid #ccc;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  font-size: 18px;
   font-weight: bold;
+  color: #333;
   cursor: pointer;
   z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+
+  @media print {
+    display: none;
+  }
+
+  @media (max-width: 600px) {
+    width: 40px;
+    height: 40px;
+    font-size: 22px;
+  }
 `;
+
 
 const PrintButton = styled.button`
   padding: 10px 15px;
@@ -166,6 +186,10 @@ const PrintButton = styled.button`
 
   &:hover {
     background: #1a252f;
+  }
+
+  @media print {
+    display: none;
   }
 `;
 
@@ -193,12 +217,39 @@ const Header = styled.div`
   strong {
     color: #2c3e50;
   }
+
+  @media (max-width: 600px) {
+    font-size: 13px;
+    grid-template-columns: 1fr;
+    
+    h1 {
+      font-size: 18px;
+    }
+  }
+`;
+const GraphSection = styled.div`
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 0; /* Remove padding */
+  margin-bottom: 20px;
+
+  @media print {
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 auto;
+    page-break-inside: avoid;
+  }
+
+  canvas {
+    width: 100% !important;
+    height: auto !important;
+    display: block;
+  }
 `;
 
-const GraphSection = styled.div`
-  text-align: center;
-  margin-bottom: 20px;
-`;
+
+
 
 const LogSection = styled.div`
   margin-top: 20px;
@@ -217,14 +268,30 @@ const LogTable = styled.table`
   th {
     background: #f4f4f4;
   }
+
+  @media (max-width: 600px) {
+    th, td {
+      font-size: 12px;
+      padding: 6px;
+    }
+  }
 `;
 
 const ComplianceSection = styled.div`
   margin-top: 20px;
+
+  @media (max-width: 600px) {
+    font-size: 13px;
+  }
 `;
 
 const Warning = styled.p`
   color: red;
   font-weight: bold;
   margin-top: 10px;
+  font-size: 14px;
+
+  @media (max-width: 600px) {
+    font-size: 13px;
+  }
 `;

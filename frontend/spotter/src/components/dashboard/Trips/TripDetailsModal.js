@@ -199,13 +199,14 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { fetchLoads, fetchTripLogs } from "../../../api/endPoints";
 import { useDispatch, useSelector } from "react-redux";
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet";
+import {  TileLayer, Marker, Popup, Polyline } from "react-leaflet";
 
 import CreateLoadModal from "./CreateLoadModal"; 
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import MapView from "../maps/MapView";
 
-const TripDetailsModal = ({ trip, onClose, onCreateLoad }) => {
+const TripDetailsModal = ({ trip, onClose, onCreateLoad, userRole }) => {
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -244,7 +245,11 @@ const TripDetailsModal = ({ trip, onClose, onCreateLoad }) => {
 
         {/* Map Section */}
         <MapSection>
-          <MapContainer center={startCoordinates} zoom={6} style={{ height: "300px", width: "100%" }}>
+          <MapContainer>
+          <MapView selectedTrip={trip}/>
+          </MapContainer>
+         
+          {/* <MapContainer center={startCoordinates} zoom={6} style={{ height: "300px", width: "100%" }}>
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution="&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors"
@@ -263,7 +268,7 @@ const TripDetailsModal = ({ trip, onClose, onCreateLoad }) => {
             </Marker>
 
             {/* Draw Polyline for the trip path */}
-            {tripPath.length > 1 && (
+            {/* {tripPath.length > 1 && (
               <Polyline
                 positions={tripPath}
                 color="blue"
@@ -271,8 +276,9 @@ const TripDetailsModal = ({ trip, onClose, onCreateLoad }) => {
                 opacity={0.7}
                 lineJoin="round"
               />
-            )}
-          </MapContainer>
+            )} */}
+          {/* </MapContainer> */}
+          
         </MapSection>
 
         {/* Loads Section */}
@@ -295,7 +301,7 @@ const TripDetailsModal = ({ trip, onClose, onCreateLoad }) => {
 
         {/* Create Load Button */}
         <ButtonContainer>
-          <CreateLoadButton onClick={() => setIsLoadModalOpen(true)}>➕ Add Load</CreateLoadButton>
+          {userRole !== "Driver" && <CreateLoadButton onClick={() => setIsLoadModalOpen(true)}>➕ Add Load</CreateLoadButton>}
         </ButtonContainer>
 
         {/* Create Load Modal */}
@@ -424,4 +430,13 @@ const CreateLoadButton = styled.button`
   &:hover {
     background: #219150;
   }
+`;
+
+const MapContainer = styled.div`
+  background: #ddd;
+  height: 300px;
+  margin: 20px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;

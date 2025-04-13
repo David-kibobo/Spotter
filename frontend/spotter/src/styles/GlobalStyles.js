@@ -1,41 +1,26 @@
-
 import { createGlobalStyle } from "styled-components";
+import { device } from "./media";
 
-const GlobalStyles = createGlobalStyle`
-  /* Reset some default styles */
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-
-  /* Set default font and background */
+export const GlobalStyle = createGlobalStyle`
   body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f8f9fa;
-    color: #333;
-    line-height: 1.6;
+    font-size: 16px;
+
+    @media ${device.mobile} {
+      font-size: 14px;
+    }
+
+    /* @media print {
+  canvas {
+    width: 100% !important;
+    height: auto !important;
   }
 
+  .chartjs-size-monitor,
+  .chartjs-render-monitor {
+    width: 100% !important;
+    height: auto !important;
+  } */
+/* } */
 
-  button {
-    border: none;
-    cursor: pointer;
-    font-size: 1rem;
-  }
-
- 
-  a {
-    text-decoration: none;
-    color: inherit;
-  }
-
-
-  .container {
-    width: 90%;
-    max-width: 1200px;
-    margin: 0 auto;
   }
 `;
-
-export default GlobalStyles;

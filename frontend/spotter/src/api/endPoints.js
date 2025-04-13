@@ -37,6 +37,28 @@ export const fetchCurrentUser = createAsyncThunk("auth/me", async (_, { rejectWi
   }
 });
 
+
+
+export const changePassword = createAsyncThunk(
+  "auth/changePassword",
+  async ({ current_password, new_password, confirm_password }, { rejectWithValue }) => {
+    try {
+      const response = await API.post("/api/user/change-password/", {
+        current_password,
+        new_password,
+        confirm_password,
+      });
+
+      return response.data.message; 
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.error || "Failed to change password"
+      );
+    }
+  }
+);
+
+
 // Drivers
 export const createDriver = createAsyncThunk("drivers/create", async (driverData, { rejectWithValue }) => {
   try {
@@ -64,6 +86,21 @@ export const updateDriver = createAsyncThunk("drivers/updateDriver", async ({ id
     return rejectWithValue(error.response?.data || "Error updating driver");
   }
 });
+export const fetchDriverHosStats = createAsyncThunk(
+  "drivers/fetchHosStats",
+  async ({ driverId, date }, { rejectWithValue }) => {
+    try {
+      const url = date
+        ? `api/logistics/hos/stats/${driverId}/?date=${date}`
+        : `api/logistics/hos/stats/${driverId}/`;
+
+      const response = await API.get(url);
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || "Failed to fetch HOS stats");
+    }
+  }
+);
 
 // Trucks
 export const fetchTrucks = createAsyncThunk("trucks/fetchTrucks", async (_, { rejectWithValue }) => {
@@ -110,7 +147,7 @@ export const createTrip = createAsyncThunk(
   async (tripData, { rejectWithValue }) => {
     try {
       const response = await API.post("/api/logistics/trips/", tripData);
-   
+
       return response.data;
     } catch (error) {
       // Log error for debugging in dev tools
@@ -129,11 +166,25 @@ export const fetchTrips = createAsyncThunk("logistics/fetchTrips", async (_, { r
   }
 });
 
+export const fetchActiveTrips = createAsyncThunk(
+  "logistics/fetchActiveTrips",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await API.get("/api/logistics/active-trips/");
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.error || "Failed to fetch active trips"
+      );
+    }
+  }
+);
+
 export const updateTrip = createAsyncThunk(
   "logistics/updateTrip",
   async ({ id, tripData }, { rejectWithValue }) => {
     try {
-   
+
       const response = await API.patch(`/api/logistics/trips/${id}/`, tripData);
       return response.data;
     } catch (error) {
@@ -153,7 +204,7 @@ export const deleteTrip = createAsyncThunk("logistics/deleteTrip", async (id, { 
 
 
 // Trip Logs
-export const createTripLog = createAsyncThunk("logistics/createTripLog", async ({currentTripId, tripLogData}, { rejectWithValue }) => {
+export const createTripLog = createAsyncThunk("logistics/createTripLog", async ({ currentTripId, tripLogData }, { rejectWithValue }) => {
   console.log("endpointTripId", currentTripId)
   try {
     const response = await API.post(`/api/logistics/trips/${currentTripId}/logs/`, tripLogData);
@@ -163,14 +214,25 @@ export const createTripLog = createAsyncThunk("logistics/createTripLog", async (
   }
 });
 
-export const fetchTripLogs = createAsyncThunk("logistics/fetchTripLogs", async (tripId, { rejectWithValue }) => {
-  try {
-    const response = await API.get(`/api/logistics/trips/${tripId}/logs/`);
-    return response.data;
-  } catch (error) {
-    return rejectWithValue(error.response?.data?.error || "Failed to fetch trip logs");
+export const fetchTripLogs = createAsyncThunk(
+  "logistics/fetchTripLogs",
+  async (tripId = null, { rejectWithValue }) => {
+    try {
+      const endpoint = tripId
+        ? `/api/logistics/trips/${tripId}/logs`
+        : `/api/logistics/trip-logs/`;
+
+      const response = await API.get(endpoint);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.error || "Failed to fetch trip logs"
+      );
+    }
   }
-});export const fetchDriverTrips = createAsyncThunk("logistics/fetchDriverTrips", async (driver_id, { rejectWithValue, getState }) => {
+);
+
+export const fetchDriverTrips = createAsyncThunk("logistics/fetchDriverTrips", async (driver_id, { rejectWithValue, getState }) => {
   try {
     // const user = getState().auth.user;
     // if (!user?.driver_profile) {
@@ -179,7 +241,7 @@ export const fetchTripLogs = createAsyncThunk("logistics/fetchTripLogs", async (
 
     // Fetch trips assigned to the specific driver
     const response = await API.get(`/api/logistics/driver-trips/${driver_id}/`);
-    return response.data; 
+    return response.data;
   } catch (error) {
     return rejectWithValue(error.response?.data?.error || "Failed to fetch driver trips");
   }
@@ -211,7 +273,7 @@ export const createELDLog = createAsyncThunk("logistics/createELDLog", async (el
     const response = await API.post("/api/logistics/eld-logs/", eldLogData);
     return response.data;
   } catch (error) {
-    
+
     return rejectWithValue(error.response?.data?.error || "Failed to create ELD log");
   }
 });
@@ -225,14 +287,24 @@ export const fetchELDLogs = createAsyncThunk("logistics/fetchELDLogs", async (_,
   }
 });
 
-export const fetchELDLogsByDriver = createAsyncThunk("logistics/fetchELDLogsByDriver", async (driverId, { rejectWithValue }) => {
-  try {
-    const response = await API.get(`/api/logistics/eld-logs/driver/${driverId}/`);
-    return response.data;
-  } catch (error) {
-    return rejectWithValue(error.response?.data?.error || "Failed to fetch ELD logs by driver");
+export const fetchELDLogsByDriver = createAsyncThunk(
+  "logistics/fetchELDLogsByDriver",
+  async ({ driverId, date = null }, { rejectWithValue }) => {
+    try {
+      const url = date
+        ? `/api/logistics/eld-logs/driver/${driverId}/?date=${date}`
+        : `/api/logistics/eld-logs/driver/${driverId}/`;
+
+      const response = await API.get(url);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.error || "Failed to fetch ELD logs by driver"
+      );
+    }
   }
-});
+);
+
 
 export const fetchELDLogsByTrip = createAsyncThunk("logistics/fetchELDLogsByTrip", async (tripId, { rejectWithValue }) => {
   try {

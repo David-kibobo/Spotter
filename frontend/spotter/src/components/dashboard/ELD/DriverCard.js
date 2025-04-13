@@ -1,5 +1,6 @@
 import React from "react";
 import styled from "styled-components";
+import { statusMap } from "../../../utils/helpers";
 
 
 
@@ -7,7 +8,7 @@ const DriverCard = ({ driver, onSelect, isSelected, currentStatus }) => (
   <Card onClick={onSelect} selected={isSelected}>
     <p><strong>{driver.user?.first_name}</strong></p>
     <p>Truck #{driver.truck_data?.truck_number}</p>
-    <p>Status: {currentStatus}</p>
+    <p>Status: {statusMap[currentStatus]}</p>
   </Card>
 );
 
