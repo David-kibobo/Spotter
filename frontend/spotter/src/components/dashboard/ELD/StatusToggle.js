@@ -1,5 +1,5 @@
 import styled, { keyframes, css } from "styled-components";
-import { canChangeStatus } from "../../../utils/helpers";
+import { canChangeStatus, statusMap } from "../../../utils/helpers";
 import { toast } from "react-toastify";
 
 const blink = keyframes`
@@ -50,7 +50,7 @@ const StatusToggle = ({ onStatusChange, activeStatus, hosStats }) => {
                 : `Switch to ${label}`
             }
           >
-            {icon} {label}
+             {statusMap[label]}
           </StatusButton>
 
         );

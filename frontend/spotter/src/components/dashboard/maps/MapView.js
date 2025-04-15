@@ -31,22 +31,47 @@ const MapView = ({ selectedTrip = null, trips = [], tripLogsAll = {} }) => {
   // Fetch logs if selectedTrip exists
   useEffect(() => {
     if (selectedTrip?.id) {
+   
       dispatch(fetchTripLogs(selectedTrip.id));
       
     }
   }, [dispatch, selectedTrip]);
 
-  // Update pathCoords if trip is selected
+
   useEffect(() => {
-    if (selectedTrip && tripLogs?.length > 0) {
-      const coords = tripLogs.map((log) => [log.latitude, log.longitude]);
-      setPathCoords(coords);
+    if (selectedTrip && tripLogs.length > 0) {
+      // Filter logs to ensure valid latitudes and longitudes
+      const validLogs = tripLogs.filter(
+        (log) =>
+          log.latitude !== null &&
+          log.longitude !== null &&
+          !isNaN(parseFloat(log.latitude)) &&
+          !isNaN(parseFloat(log.longitude))
+      );
+      // 🔽 Sort by timestamp 
+    const sortedLogs = validLogs.sort(
+      (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
+    );
+      const coords = sortedLogs.map((log) => [
+        parseFloat(log.latitude),
+        parseFloat(log.longitude),
+      ]);
+  
+      // Update the coordinates only if they are different
+      setPathCoords((prevCoords) => {
+        if (JSON.stringify(prevCoords) !== JSON.stringify(coords)) {
+          return coords;
+        }
+        return prevCoords;
+      });
     } else {
       setPathCoords([]);
     }
   }, [tripLogs, selectedTrip]);
-  console.log("Selected tRIP", pathCoords && pathCoords);
-//   Grouping triplogs by tri_id.
+  
+
+
+//   Grouping triplogs by trip_id.
   const groupedLogs = tripLogs.reduce((acc, log) => {
     const tripId = log.trip;
     if (!acc[tripId]) acc[tripId] = [];

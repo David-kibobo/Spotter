@@ -23,6 +23,21 @@ export const formatDate = (date) => {
     day: "numeric",
   });
 };
+// utils/formatDate.js
+export function formatDateTime(datetime) {
+  const dt = new Date(datetime);
+  const date = dt.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+  const time = dt.toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return { date, time };
+}
+
 
 // Capitalize first letter of a string
 export const capitalize = (str) => {
@@ -39,7 +54,11 @@ export const statusMap = {
   "off_duty": "⚪ Off-Duty",
   "on_duty": "🔵 On-Duty",
   "driving": "🟢 Driving",
-  "sleeper_berth": "🛏️ Sleeper Berth"
+  "sleeper_berth": "🛏️ Sleeper Berth",
+  "in_progress": "🟡 Ongoing",
+  "completed": "🔵 Completed",
+  "schenduled": "🟢 Upcoming"
+
 };
 
 // Function to format the timestamp

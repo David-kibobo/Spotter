@@ -21,10 +21,12 @@ from utils.validators import (
     validate_8_hour_rule,
 )
 from utils.responses import success_response, error_response
+from utils.permissions import IsCarrier, IsDriver
 
 
 # Trip API View for listing, creating, and updating trips
 class TripAPIView(APIView):
+    permission_classes = [IsAuthenticated, IsCarrier | IsDriver]
     def get(self, request, trip_id=None):
         if trip_id:
             trip = get_object_or_error(Trip, id=trip_id)
@@ -36,6 +38,8 @@ class TripAPIView(APIView):
         return success_response("Trips retrieved successfully", serializer.data)
 
     def post(self, request):
+        if not IsCarrier().has_permission(request, self):
+            return error_response("Only carriers can create trips.", 403)
         user = self.request.user
         data = request.data
         data["carrier"] = user.carrier.id
@@ -102,6 +106,7 @@ class TripAPIView(APIView):
 
 
 class DriverTripsAPIView(APIView):
+    permission_clasess=[IsAuthenticated]
     def get(self, request, driver_id=None):
         if not driver_id:
             return error_response("Driver ID is required.")
@@ -150,7 +155,7 @@ class ActiveTripListAPIView(APIView):
     """
     API to get all active trips (scheduled & in progress).
     """
-
+    permission_classes=[IsAuthenticated]
     def get(self, request):
         active_trips = Trip.objects.filter(status__in=["scheduled", "in_progress"])
         serializer = TripSerializer(active_trips, many=True)
@@ -165,7 +170,7 @@ class TripLogListCreateAPIView(APIView):
     GET (without trip_id): Logs for all active trips.
     POST (with trip_id): Add a new log for a specific trip.
     """
-
+    permission_classes=[IsAuthenticated]
     def get(self, request, trip_id=None):
         if trip_id:
             trip = get_object_or_error(Trip, id=trip_id)
@@ -174,7 +179,7 @@ class TripLogListCreateAPIView(APIView):
             return success_response("Trip logs retrieved successfully", serializer.data)
         
         # 🔥 Get logs for all active trips
-        active_trips = Trip.objects.filter(status="completed")
+        active_trips = Trip.objects.filter(status="in_progress")
         all_logs = []
 
         for trip in active_trips:
@@ -205,7 +210,7 @@ class TripLogDetailAPIView(APIView):
     """
     API to retrieve details of a single trip log.
     """
-
+    permission_classes=[IsAuthenticated]
     def get(self, request, log_id):
         log = get_object_or_error(TripLog, id=log_id)
         # if isinstance(log, Response):  # Handle Not Found
@@ -220,8 +225,7 @@ class ELDLogListCreateAPIView(APIView):
     API to list all ELD logs and allow manual creation of new logs.
     """
 
-    permission_classes = [IsAuthenticated]
-
+    permission_classes = [IsAuthenticated, IsCarrier | IsDriver]
     def get(self, request, driver_id=None, trip_id=None):
         """
         Retrieve ELD logs, optionally filtered by driver, trip, or date.
@@ -232,7 +236,7 @@ class ELDLogListCreateAPIView(APIView):
 
         logs_qs = ELDLog.objects.none()
 
-        # ⏰ Setup date range
+        #  Setup date range
         start, end = None, None
         if selected_date:
             try:
@@ -246,7 +250,7 @@ class ELDLogListCreateAPIView(APIView):
         start = make_aware(datetime.combine(selected_date, datetime.min.time()))
         end = make_aware(datetime.combine(selected_date, datetime.max.time()))
 
-        # 🔍 Filtering logic
+        #  Filtering logic
         if driver_id:
             driver = get_object_or_error(DriverProfile, id=driver_id)
             logs_qs = ELDLog.objects.filter(driver=driver)
@@ -256,10 +260,10 @@ class ELDLogListCreateAPIView(APIView):
             logs_qs = ELDLog.objects.filter(trip=trip)
 
         else:
-            # ✅ Return all logs for today for the carrier
+            #  Return all logs for today for the carrier
             logs_qs = ELDLog.objects.filter(driver__carrier=carrier)
 
-        # 🧠 Apply date overlap filter
+        #  Apply date overlap filter
         logs_qs = logs_qs.filter(timestamp__lte=end).filter(
             Q(endtime__isnull=True) | Q(endtime__gte=start)
         )
@@ -275,6 +279,8 @@ class ELDLogListCreateAPIView(APIView):
         """
         Allow drivers to manually create an ELD log entry.
         """
+        if not IsDriver().has_permission(request, self):
+           return error_response("Only drivers can create ELD Logs.", 403)
         serializer = ELDLogSerializer(data=request.data)
         error_response_data = validate_serializer(
             serializer
@@ -320,11 +326,12 @@ class ELDLogDetailAPIView(APIView):
     """
     API to retrieve and update a single ELD log entry.
     """
-
+    permission_classes = [IsAuthenticated, IsCarrier | IsDriver]
     def get(self, request, log_id):
         """
         Retrieve details of a single ELD log entry.
         """
+      
         log = get_object_or_error(ELDLog, id=log_id)
         serializer = ELDLogSerializer(log)
         return success_response("ELD log details retrieved.", serializer.data)
@@ -333,6 +340,8 @@ class ELDLogDetailAPIView(APIView):
         """
         Update an ELD log entry (e.g., manual edit by the driver).
         """
+        if not IsDriver().has_permission(request, self):
+           return error_response("Only drivers can edit ELD Logs.", 403)
         log = get_object_or_error(ELDLog, id=log_id)
         serializer = ELDLogSerializer(log, data=request.data, partial=True)
         error_response_data = validate_serializer(
@@ -364,7 +373,7 @@ class LoadListCreateAPIView(APIView):
     API for listing and creating loads.
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsCarrier | IsDriver]
 
     def get(self, request, trip_id=None):
         """
@@ -389,7 +398,9 @@ class LoadListCreateAPIView(APIView):
         """
         Create a new load.
         """
-        print("My data:", request.data)
+        if not IsCarrier().has_permission(request, self):
+            return error_response("Only carriers can create loads.", 403)
+
         data = request.data
         data["trip"] = trip_id
         trip = Trip.objects.get(id=trip_id)
@@ -415,7 +426,7 @@ class LoadDetailAPIView(APIView):
     API for retrieving, updating, and deleting a specific load.
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsCarrier]
 
     def get(self, request, load_id):
         """

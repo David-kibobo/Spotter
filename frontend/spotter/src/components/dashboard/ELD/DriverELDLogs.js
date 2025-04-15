@@ -7,15 +7,18 @@ import {
   updateTrip,
   createTripLog,
   fetchDriverHosStats,
+ 
 } from "../../../api/endPoints";
-import ELDLogsView from "./ELDLogsView";
+import ELDLogsView from "./DriverELDLogsView";
 import StatusToggle from "./StatusToggle";
 import StatusUpdateModal from "./StatusUpdateModal";
 import { reverseGeocode } from "../../../utils/helpers";
 import styled from "styled-components";
 import useTripLogger from "../../../hooks/useTripLogger";
-import TripList from "./DriversTripList";
+import DriversTripList from "./DriversTripList";
 import TripSimulator from "../../simulation/TripSimulator";
+
+import { toast } from "react-toastify";
 
 const DriverELDLogs = () => {
   const dispatch = useDispatch();
@@ -24,6 +27,8 @@ const DriverELDLogs = () => {
   const trips = useSelector((state) => state.trips?.trips??[]);
   const hosStats = useSelector((state) => state.drivers?.hosStats ?? {});
 
+
+  
   const activeTrips = trips?.filter(
     (trip) => trip.status === "scheduled" || trip.status === "in_progress"
   );
@@ -125,7 +130,7 @@ const isActiveTrip = currentTrip?.status === "in_progress";
     alert("You can't change to this status without an active trip.");
     return; // Prevent status change if no active trip exists
   }
-    setCurrentStatus(status);
+    // setCurrentStatus(status);
     setPendingStatus(status);
     setStatusModalOpen(true);
     setFormData({
@@ -181,8 +186,8 @@ const isActiveTrip = currentTrip?.status === "in_progress";
       };
 
       await dispatch(createELDLog(payload));
-      dispatch(fetchELDLogsByDriver(user?.driver_profile_id));
-      dispatch(fetchDriverHosStats(user?.driver_profile_id));
+      await dispatch(fetchELDLogsByDriver({ driverId:user?.driver_profile_id}));
+      await dispatch(fetchDriverHosStats({ driverId:user?.driver_profile_id}));
 
       if (currentTripId) {
         await dispatch(createTripLog({ currentTripId, tripLogData }));
@@ -209,8 +214,8 @@ const isActiveTrip = currentTrip?.status === "in_progress";
 
   return (
     <Container>
- {currentTrip && <TripSimulator trip={currentTrip} />}
-      <TripList trips={activeTrips}  />
+ {/* {currentTrip && <TripSimulator trip={currentTrip} />} */}
+     <DriversTripList trips={activeTrips}/>
 
       <StatusToggle
         onStatusChange={handleStatusChange}

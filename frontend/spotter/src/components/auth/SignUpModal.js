@@ -203,7 +203,7 @@ const SignupModal = ({ onClose, onSwitch }) => {
         <CloseButton onClick={onClose}>&times;</CloseButton>
         <h2>Carrier Sign Up</h2>
 
-        {error && <ErrorText>{error}</ErrorText>}
+        {/* {error && <ErrorText>{error}</ErrorText>} */}
         {successMessage && <SuccessText>{successMessage}</SuccessText>}
 
         <form onSubmit={handleSubmit}>

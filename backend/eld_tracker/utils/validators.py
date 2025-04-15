@@ -83,30 +83,38 @@ def get_distance_covered_for_date(driver, date):
 
 
 
-def validate_fueling_requirement(driver):
+def validate_fueling_requirement(incoming_log):
     """
-    Ensure fueling is logged at least once every 1000 miles.
+    Validates that fueling has occurred within the last 1000 miles of the trip.
+    Allows fueling logs to pass through.
     """
-    last_fueling = ELDLog.objects.filter(
-        driver=driver, 
-        hos_status="on_duty", 
-        remarks="Fueling"
-    ).order_by('-timestamp').first()
+    driver = incoming_log.driver
+    trip = incoming_log.trip
 
-    # Get the latest log
-    last_log = ELDLog.objects.filter(driver=driver).order_by('-timestamp').first()
+    # If it's a fueling log, allow it
+    if incoming_log.is_fueling:
+        return None
 
-    # Calculate miles since last fueling
+    if not trip:
+        return None  # If no trip is associated, skip this validation
+
+    # Fetch logs in this trip for the same driver
+    trip_logs = ELDLog.objects.filter(driver=driver, trip=trip).order_by('timestamp')
+
+    last_fueling_log = trip_logs.filter(is_fueling=True).order_by('-timestamp').first()
+    last_log = trip_logs.order_by('-timestamp').first()
+
     total_distance_since_fueling = 0
-    if last_log and last_fueling:
-        total_distance_since_fueling = last_log.distance_covered - last_fueling.distance_covered
+    if last_log and last_fueling_log:
+        total_distance_since_fueling = (last_log.distance_covered or 0) - (last_fueling_log.distance_covered or 0)
     elif last_log:
-        total_distance_since_fueling = last_log.distance_covered
+        total_distance_since_fueling = last_log.distance_covered or 0
 
     if total_distance_since_fueling >= 1000:
-        return error_response("Fueling must be logged at least once every 1000 miles.")
+        return error_response("Fueling is required at least once every 1000 miles within this trip.")
 
     return None
+
 
 
 def validate_pickup_dropoff_time(trip):

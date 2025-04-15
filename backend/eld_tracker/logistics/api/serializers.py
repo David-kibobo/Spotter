@@ -44,12 +44,15 @@ class ELDLogSerializer(serializers.ModelSerializer):
         """
         driver = data.get("driver")
         new_status = data.get("hos_status")
+        
+        # Temporarily creating an unsaved instance of the log
+        temp_log = ELDLog(**data)
 
         # Validate fueling requirement if the driver is driving/on duty
         if new_status in ["driving", "on_duty"]:
-            fueling_check = validate_fueling_requirement(driver)
+            fueling_check = validate_fueling_requirement(temp_log)
             if fueling_check:
-                raise serializers.ValidationError(fueling_check.data["message"])
+                raise serializers.ValidationError(fueling_check.data["error"])
 
         # Validate HOS rules (transitions, limits, 8-hour break)
         hos_check = validate_hos_rules(driver, new_status)

@@ -19,18 +19,22 @@ const ELDGraph = ({ logs }) => {
     .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
   // Helper: Round time to nearest 30 minutes
-  const roundToNearest30Min = (date) => {
-    const minutes = date.getMinutes();
-    const roundedMinutes = minutes < 15 ? 0 : minutes < 45 ? 30 : 0;
-    const hours = roundedMinutes === 0 && minutes >= 45 ? date.getHours() + 1 : date.getHours();
-    return `${hours.toString().padStart(2, "0")}:${roundedMinutes.toString().padStart(2, "0")}`;
-  };
+ // Round to nearest 15 minutes
+const roundToNearest15Min = (date) => {
+  const minutes = date.getMinutes();
+  const roundedMinutes = Math.round(minutes / 15) * 15;
+  const adjusted = new Date(date);
+  adjusted.setMinutes(roundedMinutes);
+  adjusted.setSeconds(0);
+  adjusted.setMilliseconds(0);
+  return adjusted.toTimeString().slice(0, 5); // HH:MM
+};
 
   // Step 2: Build rounded ELD entries
   const eldData = sortedLogs?.map((log) => {
     const time = new Date(log.timestamp);
     return {
-      time: roundToNearest30Min(time),
+      time: roundToNearest15Min(time),
       status: log.hos_status,
     };
   });
@@ -38,10 +42,11 @@ const ELDGraph = ({ logs }) => {
   // Step 3: Build full 24h time range in 30-minute intervals
   const fullTimeRange = [];
   for (let h = 0; h < 24; h++) {
-    for (let m = 0; m < 60; m += 30) {
+    for (let m = 0; m < 60; m += 15) {
       fullTimeRange.push(`${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`);
     }
   }
+  
 
   // Step 4: Fill missing time slots with last known status
   let lastStatus = "off_duty";

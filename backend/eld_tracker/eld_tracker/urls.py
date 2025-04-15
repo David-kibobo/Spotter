@@ -16,6 +16,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic import TemplateView
+from django.conf.urls.static import static
+from django.conf import settings
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -23,4 +26,12 @@ urlpatterns = [
     path('api/user/', include('users.api.urls')),
     path('api/trucks/', include('trucks.api.urls')),
     path('api/logistics/', include('logistics.api.urls')),
+]
+# Serve static and media files
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+# Serve React's index.html from the static folder in production
+urlpatterns += [
+    path('', TemplateView.as_view(template_name='index.html')),
 ]

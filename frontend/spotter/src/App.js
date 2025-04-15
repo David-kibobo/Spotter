@@ -7,13 +7,14 @@ import { useDispatch, useSelector } from 'react-redux';
 import LandingPage from './pages/LandingPage';
 import Dashboard from './components/dashboard/dashboardLayout';
 import MapPage from './components/dashboard/maps/MapPage';
-import ELDLogsPage from './components/dashboard/ELD/ELDLogsPage';
+
 import TripsPage from './components/dashboard/Trips/TripsPage';
 import SettingsPage from './components/dashboard/settings/SettingsPage';
-import DashboardHome from './components/dashboard/Home';
+
+import CarrierHomePage from './components/dashboard/CarrierHomePage';
 import AdminPanel from './components/dashboard/AdminPanel';
 import { fetchCurrentUser } from './api/endPoints';
-import ELDLogsView from './components/dashboard/ELD/ELDLogsView';
+import ELDLogsView from './components/dashboard/ELD/DriverELDLogsView';
 import CarrierELDLogs from './components/dashboard/ELD/CarrierELDLogs';
 import DriverELDLogs from './components/dashboard/ELD/DriverELDLogs';
 import { ToastContainer } from 'react-toastify';
@@ -34,7 +35,7 @@ function App() {
   const DashboardRoutes=()=>{
     const getHomeComponent = () => {
       if (user?.role === "Driver") return <DriverHomePage />;
-      return <DashboardHome />; // Default: carrier owner or dispatcher
+      return <CarrierHomePage />; // Default: carrier owner or dispatcher
     };
       return(
         <Routes>
@@ -45,7 +46,12 @@ function App() {
           <Route path="/eld-logs/driver" element={<DriverELDLogs />} />
 
           <Route path= '/trips' element={<TripsPage/>}/>
-          <Route path= '/admin-panel' element={<AdminPanel/>}/>
+          <Route path= '/admin-panel' element={
+            <RequireAuth requiredRoles={"Carrier"}>
+
+                 <AdminPanel/>
+            </RequireAuth>
+           }/>
           <Route path= '/settings' element={<SettingsPage/>}/>
           
           </Route>
@@ -61,16 +67,19 @@ function App() {
        <ToastContainer position="top-right" autoClose={3000} />
        <Routes>
   <Route path="/" element={<LandingPage />} />
+  {/* <Route path="/dashboard-redirect" element={<DashboardRedirect />} /> */}
 
-  {/* Auto redirect based on role */}
-  <Route path="/dashboard-redirect" element={<RequireAuth />} />
-
-  {/* Carrier / Dispatcher */}
-  <Route path="/dashboard/*" element={<DashboardRoutes />} />
-
-  {/* Driver-only homepage */}
-  <Route path="/dashboard/driver" element={<DriverHomePage />} />
+ {/* Protecting /dashboard routes */}
+ <Route
+          path="/dashboard/*"
+          element={
+            <RequireAuth requiredRoles={["Carrier", "dispatcher", "Driver"]}>
+              <DashboardRoutes />
+            </RequireAuth>
+          }
+        />
 </Routes>
+
 
     </Router>
   );

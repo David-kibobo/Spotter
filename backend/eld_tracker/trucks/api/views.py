@@ -5,8 +5,9 @@ from .serializers import TruckSerializer
 
 from utils.responses import success_response, error_response
 from utils.validators import validate_serializer
-
+from utils.permissions import IsCarrier
 class TruckListCreateAPIView(APIView):
+    permission_classes=[IsCarrier]
     def get(self, request):
         """Retrieve all trucks"""
         trucks = Truck.objects.all()
@@ -31,6 +32,7 @@ class TruckListCreateAPIView(APIView):
         return response  # Return validation errors
 
 class TruckDetailAPIView(APIView):
+    permission_classes = [IsCarrier]
     def get_object(self, pk):
         """Helper method to get a truck by ID"""
         try:

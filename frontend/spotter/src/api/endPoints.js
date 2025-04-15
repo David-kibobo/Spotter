@@ -23,7 +23,7 @@ export const signupUser = createAsyncThunk("auth/signup", async (userData, { rej
 });
 
 export const logoutUser = createAsyncThunk("auth/logout", async () => {
-  localStorage.removeItem("session_cookie");  // Clear stored JWT token
+  localStorage.removeItem("access_token");  // Clear stored JWT token
   sessionStorage.clear();
   return null;
 });
@@ -204,15 +204,23 @@ export const deleteTrip = createAsyncThunk("logistics/deleteTrip", async (id, { 
 
 
 // Trip Logs
-export const createTripLog = createAsyncThunk("logistics/createTripLog", async ({ currentTripId, tripLogData }, { rejectWithValue }) => {
-  console.log("endpointTripId", currentTripId)
-  try {
-    const response = await API.post(`/api/logistics/trips/${currentTripId}/logs/`, tripLogData);
-    return response.data;
-  } catch (error) {
-    return rejectWithValue(error.response?.data?.error || "Failed to create trip log");
+export const createTripLog = createAsyncThunk(
+  "logistics/createTripLog",
+  async ({ currentTripId, tripLogData }, { rejectWithValue }) => {
+    console.log("endpointTripId", currentTripId);
+    try {
+      const response = await API.post(`/api/logistics/trips/${currentTripId}/logs/`, tripLogData);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error || "Failed to create trip log");
+    }
+  },
+  {
+    // 🔥 Add this to prevent the spinner from showing for this action
+    getPendingMeta: () => ({ ignoreLoading: true }),
   }
-});
+);
+
 
 export const fetchTripLogs = createAsyncThunk(
   "logistics/fetchTripLogs",

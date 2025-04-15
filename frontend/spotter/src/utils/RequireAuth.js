@@ -1,23 +1,25 @@
-import { useEffect } from "react";
 import { useSelector } from "react-redux";
-import { useNavigate, Outlet } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 
-const RequireAuth = () => {
+const RequireAuth = ({ children, requiredRoles = [] }) => {
   const { user, status } = useSelector((state) => state.auth);
-  const navigate = useNavigate();
+  const location = useLocation();
 
-  useEffect(() => {
-    if (status === "succeeded" && user) {
-        alert('this is the user', user)
-      if (user.role === "Driver") {
-        navigate("/dashboard/driver");
-      } else {
-        navigate("/dashboard"); // carrier/dispatcher
-      }
-    }
-  }, [status, user, navigate]);
+  if (status === "loading" || status === "idle") {
+    return null; 
+  }
 
-  return null; // or a spinner while redirecting
+  if (!user) {
+    // Not logged in → redirect to landing
+    return <Navigate to="/" replace state={{ from: location }} />;
+  }
+
+  if (requiredRoles.length && !requiredRoles.includes(user.role)) {
+    // Logged in but role not allowed 
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
 };
 
 export default RequireAuth;

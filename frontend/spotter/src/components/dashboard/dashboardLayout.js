@@ -9,7 +9,7 @@ const Dashboard = () => {
   const dispatch = useDispatch();
     const { user, status } = useSelector((state) => state.auth);
 
-  console.log("Current USer:", user)
+
     useEffect(() => {
       if (!user && status === "idle") {  // ✅ Prevents infinite re-fetching
         dispatch(fetchCurrentUser());
@@ -27,7 +27,50 @@ const eldLogsPath = user?.role === "Driver" ? "eld-logs/driver" : "eld-logs/carr
   return (
     <DashboardContainer>
       {/* Sidebar Navigation */}
+
       <Sidebar isCollapsed={isCollapsed}>
+  <ToggleBtn onClick={() => setIsCollapsed(!isCollapsed)}>
+    {isCollapsed ? "☰" : "✖"}
+  </ToggleBtn>
+  <h2>{isCollapsed ? "" : "SpotterDB"}</h2>
+
+  {/* Home - visible to all */}
+  <NavItem as={Link} to="/dashboard" isCollapsed={isCollapsed}>
+    🏠 {isCollapsed ? "" : "Home"}
+  </NavItem>
+
+  {/* ELD Logs - role based */}
+  <NavItem as={Link} to={eldLogsPath} isCollapsed={isCollapsed}>
+    📄 {isCollapsed ? "" : "ELD Logs"}
+  </NavItem>
+
+{/*Trips-UI -role based */}
+  <NavItem as={Link} to="trips" isCollapsed={isCollapsed}>
+        🚚 {isCollapsed ? "" : "Trips"}
+      </NavItem>
+
+  {/* CarrierOwner or Dispatcher Only */}
+  {(user?.role === "Carrier" || user?.role === "Dispatcher") && (
+    <>
+      
+      <NavItem as={Link} to="admin-panel" isCollapsed={isCollapsed}>
+        🛠 {isCollapsed ? "" : "Admin"}
+      </NavItem>
+    </>
+  )}
+
+  {/* Settings - all roles */}
+  <NavItem as={Link} to="settings" isCollapsed={isCollapsed}>
+    ⚙️ {isCollapsed ? "" : "Settings"}
+  </NavItem>
+
+  {/* Logout */}
+  <LogoutButton onClick={handleLogout}>
+    🚪 {isCollapsed ? "" : "Logout"}
+  </LogoutButton>
+</Sidebar>
+
+      {/* <Sidebar isCollapsed={isCollapsed}>
         <ToggleBtn onClick={() => setIsCollapsed(!isCollapsed)}>
           {isCollapsed ? "☰" : "✖"}
         </ToggleBtn>
@@ -35,10 +78,11 @@ const eldLogsPath = user?.role === "Driver" ? "eld-logs/driver" : "eld-logs/carr
         <NavItem as={Link} to="/dashboard" isCollapsed={isCollapsed}>
           🏠 {isCollapsed ? "" : "Home"}
         </NavItem>
-        <NavItem as={Link} to="view-map" isCollapsed={isCollapsed}>
+        {/* Removed this page but kept it in case it might be needed */}
+        {/* <NavItem as={Link} to="view-map" isCollapsed={isCollapsed}>
           📍 {isCollapsed ? "" : "Map"}
-        </NavItem>
-        <NavItem as={Link} to={eldLogsPath} isCollapsed={isCollapsed}>
+        </NavItem> */}
+        {/* <NavItem as={Link} to={eldLogsPath} isCollapsed={isCollapsed}>
           📄 {isCollapsed ? "" : "ELD Logs"}
         </NavItem>
         <NavItem as={Link} to="trips" isCollapsed={isCollapsed}>
@@ -53,8 +97,8 @@ const eldLogsPath = user?.role === "Driver" ? "eld-logs/driver" : "eld-logs/carr
         </NavItem>
 
         {/* Logout Button */}
-        <LogoutButton onClick={handleLogout}>🚪 {isCollapsed ? "" : "Logout"}</LogoutButton>
-      </Sidebar>
+        {/* <LogoutButton onClick={handleLogout}>🚪 {isCollapsed ? "" : "Logout"}</LogoutButton>
+      </Sidebar> */} 
 
       {/* Main Dashboard Content */}
       <MainContent isCollapsed={isCollapsed}>

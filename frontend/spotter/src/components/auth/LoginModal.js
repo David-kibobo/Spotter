@@ -47,7 +47,7 @@ const LoginModal = ({ onClose, onSwitch }) => {
         <CloseButton onClick={onClose}>&times;</CloseButton>
         <h2>Login</h2>
 
-        {error && <ErrorText>{error}</ErrorText>}
+        {/* {error && <ErrorText>{error}</ErrorText>} */}
 
         <form onSubmit={handleSubmit}>
           <StyledInput

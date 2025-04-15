@@ -1,68 +1,22 @@
-// import React from "react";
-// import styled from "styled-components";
-// import { updateTrip } from "../../../api/endPoints";
-// import { useDispatch } from "react-redux";
-
-
-
-
-  
-
-// const TripList = ({ activeTrips, onStartTrip, trips }) => {
-//     const dispatch=useDispatch()
-//     const handleStartTrip = (tripId) => {
-//         dispatch(updateTrip({ id: tripId, tripData: { status: "in_progress" } }));
-//       };
-      
-//       const handleEndTrip = (tripId) => {
-//         dispatch(updateTrip({ id: tripId, tripData: { status: "completed" } }));
-//       };
-      
-//       const handleCancelTrip = (tripId) => {
-//         dispatch(updateTrip({ id: tripId, tripData: { status: "cancelled" } }));
-//       };
-//   return (
-//     <div>
-//      {activeTrips?.length > 0 ? (
-//   activeTrips.map((trip) => (
-//     <TripCard key={trip.id}>
-//       <div>
-//         <p><strong>{trip.start_location}</strong> ➝ <strong>{trip.destination_location}</strong></p>
-//         <span>📅 {trip.start_time}</span>
-//         <StatusBadge> {trip.status}</StatusBadge>
-//       </div>
-//       {/* Show the Start Trip, End Trip, or Cancel Trip button based on current status */}
-//       {trip.status === "scheduled" && (
-//         <Button onClick={() => handleStartTrip(trip.id)}>Start Trip</Button>
-//       )}
-//       {trip.status === "in_progress" && (
-//         <Button onClick={() => handleEndTrip(trip.id)}>End Trip</Button>
-//       )}
-//       {trip.status === "scheduled" && (
-//         <Button onClick={() => handleCancelTrip(trip.id)} cancel>
-//           Cancel Trip
-//         </Button>
-//       )}
-//       {/* 🚨 Show load status */}
-//       {!trip.has_load && <Warning>No Load Assigned ⚠</Warning>}
-//     </TripCard>
-//   ))
-// ) : (
-//   <p>No active trips.</p>
-// )}
-//     </div>
-//   );
-// };
-
-// export default TripList;
-
-import React from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 import { updateTrip } from "../../../api/endPoints";
 import { useDispatch } from "react-redux";
+import TripDetailsModal from "../Trips/TripDetailsModal";
+import { formatDateTime, statusMap } from "../../../utils/helpers";
+import TripSimulator from "../../simulation/TripSimulator";
 
-const DriversTripList = ({ trips, setSelectedTrip  }) => {
+const DriversTripList = ({ trips }) => {
   const dispatch = useDispatch();
+
+  const [selectedTrip, setSelectedTrip] = useState(null);
+  const [simulatedTrip, setSimulatedTrip] = useState(null); 
+ 
+  const [isSimulating, setIsSimulating] = useState(false); 
+  const [simulationActive, setSimulationActive] = useState(false);
+
+  const handleStart = () => setSimulationActive(true);
+  const handleStop = () => setSimulationActive(false);
 
   const handleStartTrip = (tripId) => {
     dispatch(updateTrip({ id: tripId, tripData: { status: "in_progress" } }));
@@ -79,43 +33,105 @@ const DriversTripList = ({ trips, setSelectedTrip  }) => {
   return (
     <div>
       {trips?.length > 0 ? (
-        trips.map((trip) => (
-          <TripCard key={trip.id} onClick={() => setSelectedTrip(trip)}>
-            <div>
-              <p>
-                <strong>{trip.start_location}</strong> ➝{" "}
-                <strong>{trip.destination_location}</strong>
-              </p>
-              <span>📅 {trip.start_time}</span>
-              <StatusBadge status={trip.status}> {trip.status}</StatusBadge>
-            </div>
+        trips.map((trip) => {
+          const { date, time } = formatDateTime(trip.start_time);
 
-            {/* Action buttons shown based on trip status */}
-            {trip.status === "scheduled" && (
-              <>
-                <Button onClick={() => handleStartTrip(trip.id)}>Start Trip</Button>
-                <Button onClick={() => handleCancelTrip(trip.id)} cancel>
-                  Cancel Trip
-                </Button>
-              </>
-            )}
+          return (
+            <TripCard key={trip.id} onClick={() => setSelectedTrip(trip)}>
+              <div>
+                <p>
+                  <strong>{trip.start_location}</strong> ➝{" "}
+                  <strong>{trip.destination_location}</strong>
+                </p>
+                <span>📅 {date} at {time}</span>
+                <StatusBadge status={ trip.status}>{statusMap[trip.status]}</StatusBadge>
+              </div>
 
-            {trip.status === "in_progress" && (
-              <Button onClick={() => handleEndTrip(trip.id)}>End Trip</Button>
-            )}
+              {trip.status === "scheduled" && (
+                <>
+                  <Button onClick={() => handleStartTrip(trip.id)} start>
+                    Start Trip
+                  </Button>
+                  <Button onClick={() => handleCancelTrip(trip.id)} cancel>
+                    Cancel Trip
+                  </Button>
+                </>
+              )}
 
-            {/* Load status */}
-            {!trip.has_load && <Warning>No Load Assigned ⚠</Warning>}
-          </TripCard>
-        ))
+{trip.status === "in_progress" && (
+  <>
+    <Button
+      onClick={(e) => {
+        e.stopPropagation();
+        handleEndTrip(trip.id);
+      }}
+    >
+      End Trip
+    </Button>
+
+    {trip.start_latitude && trip.start_longitude &&
+     trip.destination_latitude && trip.destination_longitude ? (
+      <Button
+      onClick={(e) => {
+        e.stopPropagation();
+    
+        const isThisTripSimulating = simulatedTrip?.id === trip.id && isSimulating;
+    
+        if (isThisTripSimulating) {
+          setSimulatedTrip(null);
+          setIsSimulating(false);
+          handleStop(); // ✅ stop engine
+        } else {
+          setSimulatedTrip(trip);
+          setIsSimulating(true);
+          handleStart(); // ✅ start engine
+        }
+      }}
+    >
+      {simulatedTrip?.id === trip.id && isSimulating
+        ? "Stop Simulation"
+        : "Simulate Trip"}
+    </Button>
+    
+      ) : (
+        <Warning>Missing coordinates ⚠</Warning>
+      )}
+  </>
+)}
+
+
+
+
+              {!trip.has_load && <Warning>No Load Assigned ⚠</Warning>}
+            </TripCard>
+          );
+        })
       ) : (
         <NoTrips>No trips found.</NoTrips>
+      )}
+
+      {/* Trip Details Modal */}
+      {selectedTrip && (
+        <TripDetailsModal
+          trip={selectedTrip}
+          onClose={() => setSelectedTrip(null)}
+          userRole={"Driver"}
+        />
+      )}
+
+      {/* Trip Simulator Modal */}
+      {simulatedTrip && (
+        <TripSimulator
+          trip={simulatedTrip}
+           simulationActive={simulationActive} 
+        />
       )}
     </div>
   );
 };
 
 export default DriversTripList;
+
 
 const TripCard = styled.div`
   background: #f9f9f9;

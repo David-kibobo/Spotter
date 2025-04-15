@@ -34,7 +34,7 @@ const {total_hours_past_8_days, available_hours_tomorrow}=hosStats;
           <Header>
               <h1>Driver’s Daily Log</h1>
               <p><strong>Driver:</strong> {driver.name} | <strong>Co-Driver:</strong> {driver.coDriver || "N/A"}</p>
-              <p><strong>Truck:</strong> {driver.truckNumber} | <strong>Miles Driven:</strong> {hosStats.totalMiles} mi</p>
+              <p><strong>Truck:</strong> {driver.truckNumber} | <strong>Miles Driven:</strong> {driver.totalMiles} mi</p>
               <p><strong>Carrier:</strong> {driver.carrier}</p>
               <p><strong>Carrier’s Office:</strong> {driver?.carrierAddress}</p>
               <p><strong>Date:</strong> {selectedDate}</p>

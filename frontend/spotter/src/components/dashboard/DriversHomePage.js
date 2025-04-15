@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector, } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import {
   fetchELDLogsByDriver,
   fetchDriverHosStats,
   fetchDriverTrips,
+  updateTrip
   
 } from "../../api/endPoints";
 import { getHOSDurationsForDate } from "../../utils/helpers";
@@ -12,9 +14,11 @@ import HOSRecapPanel from "./ELD/HOSRecapPanel";
 import MapView from "./maps/MapView";
 import { statusMap } from "../../utils/helpers"; 
 import StatusToggle from "./ELD/StatusToggle";
+import { toast } from "react-toastify";
 
 const DriverHomePage = () => {
   const dispatch = useDispatch();
+  const navigate =useNavigate();
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10));
 
   // Redux state selectors
@@ -23,6 +27,8 @@ const DriverHomePage = () => {
   const logs = useSelector((state) => state.eldLogs?.eldLogs?.data || []);
   const hosStats = useSelector((state) => state.drivers?.hosStats ?? []);
   const trips = useSelector((state) => state.trips?.activeTrips || []);
+  const currentTrip = trips?.find((trip) => trip.status === "in_progress");
+  console.log("Current Trip:", currentTrip)
 
   const [latestMiles, setLatestMiles] = useState(0);
 
@@ -30,7 +36,7 @@ const DriverHomePage = () => {
     if (driverId) {
       dispatch(fetchELDLogsByDriver({ driverId: driverId, date: selectedDate }));
       dispatch(fetchDriverHosStats({ driverId: driverId, date: selectedDate }));
-    //   dispatch(fetchDriverHosStats(user?.driver_profile_id));
+    
       dispatch(fetchDriverTrips(driverId ));
     }
   }, [driverId, selectedDate, dispatch]);
@@ -55,6 +61,17 @@ const DriverHomePage = () => {
 
   const currentStatus = logs?.[logs.length - 1]?.hos_status || "No logs yet";
   const nextTrip = trips?.find((trip) => trip.status === "scheduled");
+  const handleStartTrip = async (tripId) => {
+    try {
+      await dispatch(updateTrip({ id: tripId, tripData: { status: "in_progress" } })).unwrap();
+
+      // ✅ Redirect to ELD Logs page for that trip
+      navigate("eld-logs/driver");
+    } catch (error) {
+      console.error("Failed to start trip:", error);
+      toast.error("Unable to start trip. Please try again.");
+    }
+  };
 
   return (
     <Container>
@@ -74,20 +91,23 @@ const DriverHomePage = () => {
           <p><strong>BOL #:</strong> #45678</p>
           <p><strong>Commodity:</strong> XYZ Freight - Electronics</p>
         </Section>
-
         {nextTrip && (
-          <Section>
-            <h3>📅 Next Scheduled Trip</h3>
-            <p><strong>From:</strong> {nextTrip.start_location}</p>
-            <p><strong>To:</strong> {nextTrip.destination_location}</p>
-            <p><strong>Start:</strong> {new Date(nextTrip.start_time).toLocaleString()}</p>
-          </Section>
-        )}
+  <Section>
+    <h3>📅 Next Scheduled Trip</h3>
+    <p><strong>From:</strong> {nextTrip.start_location}</p>
+    <p><strong>To:</strong> {nextTrip.destination_location}</p>
+    <p><strong>Start:</strong> {new Date(nextTrip.start_time).toLocaleString()}</p>
+    <Button onClick={() => handleStartTrip(nextTrip.id)}
+    disabled={nextTrip.status !== "scheduled"}
+      >Start Trip</Button>
+  </Section>
+)}
+
       </LeftPanel>
 
       <MainSection>
       <Section>
-  <h3>🚦 Change Status</h3>
+  {/* <h3>🚦 Change Status</h3> */}
   {/* <StatusToggle
     onStatusChange={handleStatusChange}
     activeStatus={currentStatus}
@@ -116,10 +136,14 @@ const DriverHomePage = () => {
          
         </Section>
 
-        {logs?.length > 0 && (
+        {currentTrip && (
           <Section>
             <h3>📍 Location Map</h3>
-            <MapView selectedTrip={trips} />
+
+            <MapContainer>
+            <MapView selectedTrip={currentTrip} />
+            </MapContainer>
+            
           </Section>
         )}
       </MainSection>
@@ -223,4 +247,33 @@ const RightPanel = styled.div`
     width: 100%;
     order: 3;
   }
+`;
+const Button = styled.button`
+  padding: 8px 12px;
+  background-color: #28a745;
+  border: none;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+  font-size: 14px;
+  transition: background 0.3s ease;
+
+  &:hover {
+    background-color: #218838;
+  }
+  &:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+
+`;
+
+const MapContainer = styled.div`
+  background: #ddd;
+  height: 300px;
+  margin: 20px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;

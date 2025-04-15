@@ -1,20 +1,20 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
-import MapComponent from "./maps/MapComponent";
+
 import { useDispatch, useSelector } from "react-redux";
 import { fetchELDLogs, fetchActiveTrips, fetchDrivers, fetchTrips, fetchTripLogs } from "../../api/endPoints"; 
 import { format } from "date-fns";
 import { statusMap } from "../../utils/helpers";
 import MapView from "./maps/MapView";
 
-const DashboardHome = () => {
+const CarrierHomePage = () => {
   const dispatch = useDispatch();
   const [userRole, setUserRole] = useState(null);
 
 
   
   const logsToday = useSelector((state) => state.eldLogs?.eldLogs?.data);
-  // const drivers = useSelector((state) => state.drivers?.drivers?.data ?? []);
+
   const activeTrips = useSelector((state) => state.trips?.activeTrips); 
   const trips=useSelector((state) => state.trips?.trips); 
   const allTripLogs=useSelector((state)=> state.tripLogs?.tripLogs)
@@ -40,7 +40,7 @@ const displayLogs = logsToday?.map((log) => ({
     <Content>
       {/* Overview Section */}
       <Overview>
-        <StatCard>🚛 Active Trips: <span>{trips?.length}</span></StatCard>
+        <StatCard>🚛 Active Trips: <span>{activeTrips?.length}</span></StatCard>
         <StatCard>📄 Logs Today: <span>{logsToday?.length}</span></StatCard>
         {(userRole === "carrier" || userRole === "dispatcher") && (
           <StatCard>⚠️ Violations: <span>1</span></StatCard>
@@ -49,8 +49,8 @@ const displayLogs = logsToday?.map((log) => ({
 
       {/* Map Section */}
       <MapContainer>
-        {/* <MapComponent userRole={userRole} /> */}
-        <MapView trips={trips} tripLogsAll={allTripLogs}/>
+       
+        <MapView trips={activeTrips} tripLogsAll={allTripLogs}/>
       </MapContainer>
 
       {/* Logs Section */}
@@ -64,7 +64,7 @@ const displayLogs = logsToday?.map((log) => ({
   );
 };
 
-export default DashboardHome;
+export default CarrierHomePage;
 
 /* Styled Components */
 const Content = styled.div`

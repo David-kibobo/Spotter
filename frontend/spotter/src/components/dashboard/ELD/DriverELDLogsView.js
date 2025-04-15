@@ -5,30 +5,31 @@ import ELDGraph from "./ELDGraph";
 import PrintableELDLog from "./ELDdocument";
 import StatusToggle from "./StatusToggle";
 import { useDispatch } from "react-redux";
-import { fetchELDLogsByDriver, fetchDriverHosStats } from "../../../api/endPoints"; 
-import { transformLogData, getHOSDurationsForDate, formatMinutes } from "../../../utils/helpers";
+import { fetchELDLogsByDriver, fetchDriverHosStats } from "../../../api/endPoints";
+import { transformLogData, getHOSDurationsForDate, formatMinutes, statusMap } from "../../../utils/helpers";
 import HOSRecapPanel from "./HOSRecapPanel";
 
+
 const ELDLogsView = ({ driver, logs, currentStatus, trips, setIsPrintModalOpen, isPrintModalOpen, hosStats }) => {
-  const dispatch=useDispatch();
-  
-  const [selectedTripId, setSelectedTripId] = useState(""); 
-  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10)); 
+  const dispatch = useDispatch();
+
+  const [selectedTripId, setSelectedTripId] = useState("");
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [latestMiles, setLatestMiles] = useState(0);
 
   console.log("TRips", logs)
- useEffect(() => {
+  useEffect(() => {
     if (selectedDate) {
       dispatch(fetchELDLogsByDriver({ driverId: driver.driverId, date: selectedDate }));
-      dispatch(fetchDriverHosStats({driverId:driver.driverId, date:selectedDate}));
+      dispatch(fetchDriverHosStats({ driverId: driver.driverId, date: selectedDate }));
     }
-  }, [ selectedDate, dispatch]);
- 
-  const filteredLogs=logs;
+  }, [selectedDate, dispatch]);
 
-   
+  const filteredLogs = logs;
+
+
   const transformedData = transformLogData(logs);
-  const todayDurations = getHOSDurationsForDate(filteredLogs,selectedDate);
+  const todayDurations = getHOSDurationsForDate(filteredLogs, selectedDate);
 
   return (
     <Container>
@@ -39,7 +40,7 @@ const ELDLogsView = ({ driver, logs, currentStatus, trips, setIsPrintModalOpen, 
           <p><strong>🚚 Trailer:</strong> #A230</p>
           <p><strong>👤 Name:</strong> {driver?.name}</p>
           <p><strong>👥 Co-Driver:</strong> {driver?.coDriver || "None"}</p>
-          <p><strong>📍 Current Status:</strong> {currentStatus}</p>
+          <p><strong>📍 Current Status:</strong> {statusMap[currentStatus]}</p>
           <p><strong>🏢 Carrier:</strong> {driver?.carrier}</p>
           <p><strong>📍 Carrier Address:</strong> {driver?.carrierAddress}</p>
           <p><strong>🛣️ Total Miles Today:</strong> {driver?.totalMiles} mi</p>
@@ -54,19 +55,8 @@ const ELDLogsView = ({ driver, logs, currentStatus, trips, setIsPrintModalOpen, 
       <MainSection>
         <Header>
           <h2 style={{ marginTop: "5px" }}>📄 ELD Logs</h2>
-          <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap", marginBottom:"50px" }}>
-            {/* <select value={selectedTripId} onChange={e => setSelectedTripId(e.target.value)}>
-              <option value="">All Trips</option>
-              {trips?.map((trip) => {
-                const startCity = trip.start_location?.split(',')[0] || 'Start';
-                const endCity = trip.destination_location?.split(',')[0] || 'End';
-                return (
-                  <option key={trip.id} value={trip.id}>
-                    Trip #{trip.truck_data?.truck_number} — {startCity} → {endCity}
-                  </option>
-                );
-              })} */}
-            {/* </select> */}
+          <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap", marginBottom: "50px" }}>
+           
 
             <DatePicker type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
             <DownloadButton onClick={() => setIsPrintModalOpen(true)}>📥 View/Print</DownloadButton>
@@ -77,22 +67,37 @@ const ELDLogsView = ({ driver, logs, currentStatus, trips, setIsPrintModalOpen, 
           <ELDGraph logs={filteredLogs} />
         </GraphContainer>
 
-        <LogEntries>
+
+
+        <LogSection>
           <h3>Log Entries for {selectedDate}</h3>
-          {transformedData?.map((entry, index) => (
-            <LogItem key={index}>
-              <span>{entry.time}</span>
-              <span>{entry.status}</span>
-              <span>{entry.duration}</span>
-              <span>{entry.remarks}</span>
-            </LogItem>
-          ))}
-        </LogEntries>
+          <LogTable>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Status</th>
+                <th>Duration</th>
+                <th>Remarks</th>
+              </tr>
+            </thead>
+            <tbody>
+              {transformedData.map((log, index) => (
+                <tr key={index}>
+                  <td>{log.time}</td>
+                  <td>{log.status}</td>
+                  <td>{log.duration} min</td>
+                  <td>{log.remarks || "N/A"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </LogTable>
+        </LogSection>
+
       </MainSection>
 
       <RightPanel>
         <HOSRecapPanel hosStats={hosStats} todayDurations={todayDurations} driver={driver} filteredLogs={filteredLogs} />
-        
+
       </RightPanel>
 
       {isPrintModalOpen && (
@@ -234,7 +239,31 @@ const LogItem = styled.div`
     }
   }
 `;
+const LogSection = styled.div`
+  margin-top: 20px;
+`;
 
+const LogTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+
+  th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+  }
+
+  th {
+    background: #f4f4f4;
+  }
+
+  @media (max-width: 600px) {
+    th, td {
+      font-size: 12px;
+      padding: 6px;
+    }
+  }
+`;
 const ShippingSection = styled.div`
   margin-top: 20px;
   background: #2c3e50;
