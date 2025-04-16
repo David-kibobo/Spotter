@@ -33,3 +33,8 @@ dist/
 .env.development
 .env.production
 .env.test
+
+# ========================
+# 🚀 Deployment
+# ========================
+deploy_oracle.sh
