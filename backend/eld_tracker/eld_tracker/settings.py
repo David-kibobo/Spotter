@@ -55,7 +55,7 @@ AUTH_USER_MODEL = "users.User"
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
-         'rest_framework.authentication.SessionAuthentication',
+        
     ),
 }
 SIMPLE_JWT = {
@@ -79,7 +79,7 @@ ROOT_URLCONF = "eld_tracker.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+         "DIRS":  [BASE_DIR / 'staticfiles/build', os.path.join(BASE_DIR, 'templates')  ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [

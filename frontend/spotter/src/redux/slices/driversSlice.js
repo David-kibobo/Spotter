@@ -31,9 +31,10 @@ const driverSlice = createSlice({
       })
       .addCase(createDriver.fulfilled, (state, action) => {
         state.loading = false;
-        state.drivers.push(action.payload);
+        state.drivers = Array.isArray(action.payload) ? action.payload : [];
         state.error = null;
       })
+      
       .addCase(createDriver.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;

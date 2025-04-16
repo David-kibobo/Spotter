@@ -26,9 +26,9 @@ const DriverHomePage = () => {
   const driverId = useSelector((state) => state.auth?.user?.driver_profile_id);
   const logs = useSelector((state) => state.eldLogs?.eldLogs?.data || []);
   const hosStats = useSelector((state) => state.drivers?.hosStats ?? []);
-  const trips = useSelector((state) => state.trips?.activeTrips || []);
+  const trips = useSelector((state) => state.trips?.trips || []);
   const currentTrip = trips?.find((trip) => trip.status === "in_progress");
-  console.log("Current Trip:", currentTrip)
+
 
   const [latestMiles, setLatestMiles] = useState(0);
 
@@ -59,7 +59,7 @@ const DriverHomePage = () => {
         totalSleeperBerth: 0,
       };
 
-  const currentStatus = logs?.[logs.length - 1]?.hos_status || "No logs yet";
+  const currentStatus = logs?.[logs.length - 1]?.hos_status || "off_duty";
   const nextTrip = trips?.find((trip) => trip.status === "scheduled");
   const handleStartTrip = async (tripId) => {
     try {

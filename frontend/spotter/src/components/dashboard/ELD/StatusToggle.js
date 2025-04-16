@@ -32,31 +32,38 @@ const StatusToggle = ({ onStatusChange, activeStatus, hosStats }) => {
 
 
   return (
-    <StatusContainer>
-      {statuses.map(({ label, color, icon, blinkColor, textColor }) => {
-        const isDisabled = !canChangeStatus(label, activeStatus, hosStats);
-        return (
-          <StatusButton
-            key={label}
-            isActive={activeStatus === label}
-            color={color}
-            blinkColor={blinkColor || color}
-            textColor={textColor || "white"}
-            onClick={() => handleToggle(label)}
-            disabled={isDisabled}
-            title={
-              isDisabled
-                ? `Can't switch to "${label}" – violates HOS rules.`
-                : `Switch to ${label}`
-            }
-          >
-             {statusMap[label]}
-          </StatusButton>
-
-        );
-      })}
-    </StatusContainer>
+    <>
+       
+      <StatusContainer>
+        {statuses.map(({ label, color, icon, blinkColor, textColor }) => {
+          const isDisabled = !canChangeStatus(label, activeStatus, hosStats);
+          return (
+            <StatusButton
+              key={label}
+              isActive={activeStatus === label}
+              color={color}
+              blinkColor={blinkColor || color}
+              textColor={textColor || "white"}
+              onClick={() => handleToggle(label)}
+              disabled={isDisabled}
+              title={
+                isDisabled
+                  ? `Can't switch to "${label}" – violates HOS rules.`
+                  : `Switch to ${label}`
+              }
+            >
+              {statusMap[label]}
+            </StatusButton>
+          );
+        })}
+      </StatusContainer>
+  
+   
+    </>
   );
+  
+  
+
 };
 
 
@@ -110,6 +117,14 @@ const StatusButton = styled.button`
     text-align: center;
     border-radius: 12px;
   }
+`;
+const HelperMessage = styled.div`
+  margin-top: 10px;
+  color: #ccc;
+  font-size: 13px;
+  text-align: center;
+  max-width: 90%;
+  line-height: 1.4;
 `;
 
 

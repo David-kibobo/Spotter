@@ -81,10 +81,13 @@ fi
 # === DEPLOY TO ORACLE ===
 echo "📤 Uploading project to Oracle server..."
 
-# Clean up backup directory first if needed
-ssh -i "$PRIVATE_KEY" $REMOTE_USER@$REMOTE_IP "rm -rf $BACKUP_DIR && mkdir -p $BACKUP_DIR"
+# Upload only backend and staticfiles — do NOT overwrite other folders like spotter_conf or run
+ssh -i "$PRIVATE_KEY" $REMOTE_USER@$REMOTE_IP "sudo mkdir -p $REMOTE_DIR/backend && sudo chown -R \$USER:\$USER $REMOTE_DIR/backend"
 
-rsync -az --delete \
+rsync -az \
+  --no-perms \
+  --no-group \
+  --chmod=Du=rwx,Dgo=rx,Fu=rw,Fgo=r \
   --exclude=frontend/ \
   --exclude=frontend/spotter/node_modules/ \
   --exclude=*.pyc \
@@ -96,8 +99,11 @@ rsync -az --delete \
   --include='backend/**/staticfiles/build/**' \
   --backup \
   --backup-dir="$BACKUP_DIR" \
+  --ignore-errors \
+  --rsync-path="sudo rsync" \
   -e "ssh -i $PRIVATE_KEY" \
-  "$LOCAL_DIR/" "$REMOTE_USER@$REMOTE_IP:$REMOTE_DIR/"
+  "$BACKEND_DIR/" "$REMOTE_USER@$REMOTE_IP:$REMOTE_DIR/backend/"
+
 
 if [ $? -ne 0 ]; then
   echo "❌ Rsync failed!"

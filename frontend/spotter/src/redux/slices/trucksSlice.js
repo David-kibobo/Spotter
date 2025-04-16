@@ -31,8 +31,12 @@ const trucksSlice = createSlice({
             })
             // Add Truck
             .addCase(addTruck.fulfilled, (state, action) => {
+                if (!Array.isArray(state.trucks)) {
+                  state.trucks = [];
+                }
                 state.trucks.push(action.payload);
-            })
+              })
+              
             // Update Truck
             .addCase(updateTruck.fulfilled, (state, action) => {
                 if (Array.isArray(state.trucks)) {
@@ -47,8 +51,11 @@ const trucksSlice = createSlice({
               
             // Delete Truck
             .addCase(deleteTruck.fulfilled, (state, action) => {
-                state.trucks = state.trucks.filter((truck) => truck.id !== action.payload);
-            });
+                if (Array.isArray(state.trucks)) {
+                  state.trucks = state.trucks.filter((truck) => truck.id !== action.payload);
+                }
+              })
+              
     },
 });
 export const { clearTrucksError } = trucksSlice.actions;

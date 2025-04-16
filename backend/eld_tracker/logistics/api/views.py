@@ -179,7 +179,7 @@ class TripLogListCreateAPIView(APIView):
             return success_response("Trip logs retrieved successfully", serializer.data)
         
         # 🔥 Get logs for all active trips
-        active_trips = Trip.objects.filter(status="in_progress")
+        active_trips = Trip.objects.filter(status__in=["in_progress"])
         all_logs = []
 
         for trip in active_trips:

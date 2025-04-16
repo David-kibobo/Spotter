@@ -24,9 +24,7 @@ const TripDetailsModal = ({ trip, onClose, onCreateLoad, userRole }) => {
   const loadsForThisTrip = loads.filter((load) => load.trip === trip.id);
 
    const tripLogs = useSelector((state) => state.tripLogs?.tripLogs ?? []);
-  // Coordinates for the start and destination locations
-  const startCoordinates = trip.start_coordinates || [37.7749, -122.4194]; 
-  const destinationCoordinates = trip.destination_coordinates || [34.0522, -118.2437]; 
+
 
   // Extract coordinates from trip logs (assuming lat, lng in logs)
   const tripPath = tripLogs.map((log) => [log.latitude, log.longitude]);

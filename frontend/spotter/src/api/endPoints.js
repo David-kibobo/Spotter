@@ -1,5 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import API from "../utils/api";
+import { toast } from "react-toastify";
 
 // Async Thunks
 
@@ -9,6 +10,7 @@ export const loginUser = createAsyncThunk("auth/login", async (credentials, { re
     const response = await API.post("/api/token/login/", credentials);
     return response.data;
   } catch (error) {
+    toast.error("❌ Login failed. Please make sure you are using the correct details.");
     return rejectWithValue(error.response?.data?.error || "Login failed");
   }
 });
@@ -16,8 +18,10 @@ export const loginUser = createAsyncThunk("auth/login", async (credentials, { re
 export const signupUser = createAsyncThunk("auth/signup", async (userData, { rejectWithValue }) => {
   try {
     const response = await API.post("/api/token/signup/carrier/", userData);
+    toast.success(" ✅ Signup was successful. Please login to access your account.")
     return response.data;
   } catch (error) {
+
     return rejectWithValue(error.response?.data?.error || "Signup failed");
   }
 });
@@ -48,7 +52,7 @@ export const changePassword = createAsyncThunk(
         new_password,
         confirm_password,
       });
-
+       toast.success(" ✅ You changed your password.")
       return response.data.message; 
     } catch (error) {
       return rejectWithValue(
@@ -63,6 +67,7 @@ export const changePassword = createAsyncThunk(
 export const createDriver = createAsyncThunk("drivers/create", async (driverData, { rejectWithValue }) => {
   try {
     const response = await API.post("/api/user/drivers/create/", driverData);
+    toast.success("✅ Driver created successfully. Don't forget to provide them with their login details.");
     return response.data;
   } catch (error) {
     return rejectWithValue(error.response?.data?.error || "Driver creation failed");
@@ -81,6 +86,7 @@ export const fetchDrivers = createAsyncThunk("drivers/fetch", async (_, { reject
 export const updateDriver = createAsyncThunk("drivers/updateDriver", async ({ id, driverData }, { rejectWithValue }) => {
   try {
     const response = await API.put(`api/user/drivers/${id}/update/`, driverData);
+    toast.success("✅ Driver details updated successfully!");
     return response.data;
   } catch (error) {
     return rejectWithValue(error.response?.data || "Error updating driver");
@@ -115,6 +121,7 @@ export const fetchTrucks = createAsyncThunk("trucks/fetchTrucks", async (_, { re
 export const addTruck = createAsyncThunk("trucks/addTruck", async (truckData, { rejectWithValue }) => {
   try {
     const response = await API.post("api/trucks/", truckData);
+    toast.success("✅ Truck created successfully!");
     return response.data;
   } catch (error) {
     return rejectWithValue(error.response?.data?.error || "Error adding truck");
@@ -124,6 +131,7 @@ export const addTruck = createAsyncThunk("trucks/addTruck", async (truckData, { 
 export const updateTruck = createAsyncThunk("trucks/updateTruck", async ({ id, truckData }, { rejectWithValue }) => {
   try {
     const response = await API.put(`api/trucks/${id}/`, truckData);
+    toast.success("✅ Truck updated successfully!");
     return response.data;
   } catch (error) {
     return rejectWithValue(error.response?.data || "Error updating truck");
@@ -133,6 +141,7 @@ export const updateTruck = createAsyncThunk("trucks/updateTruck", async ({ id, t
 export const deleteTruck = createAsyncThunk("trucks/deleteTruck", async (id, { rejectWithValue }) => {
   try {
     await API.delete(`api/trucks/${id}/`);
+    toast.success("✅ Truck deleted successfully!");
     return id;
   } catch (error) {
     return rejectWithValue(error.response?.data || "Error deleting truck");
@@ -147,7 +156,7 @@ export const createTrip = createAsyncThunk(
   async (tripData, { rejectWithValue }) => {
     try {
       const response = await API.post("/api/logistics/trips/", tripData);
-
+      toast.success("✅ Trip created successfully!");
       return response.data;
     } catch (error) {
       // Log error for debugging in dev tools
@@ -186,6 +195,7 @@ export const updateTrip = createAsyncThunk(
     try {
 
       const response = await API.patch(`/api/logistics/trips/${id}/`, tripData);
+      toast.success("✅ Trip updated successfully!");
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.error || "Failed to update trip");
@@ -196,6 +206,7 @@ export const updateTrip = createAsyncThunk(
 export const deleteTrip = createAsyncThunk("logistics/deleteTrip", async (id, { rejectWithValue }) => {
   try {
     await API.delete(`/api/logistics/trips/${id}/`);
+    toast.success("✅ Trip deleted successfully!");
     return id;
   } catch (error) {
     return rejectWithValue(error.response?.data?.error || "Failed to delete trip");
@@ -227,7 +238,7 @@ export const fetchTripLogs = createAsyncThunk(
   async (tripId = null, { rejectWithValue }) => {
     try {
       const endpoint = tripId
-        ? `/api/logistics/trips/${tripId}/logs`
+        ? `/api/logistics/trips/${tripId}/logs/`
         : `/api/logistics/trip-logs/`;
 
       const response = await API.get(endpoint);
