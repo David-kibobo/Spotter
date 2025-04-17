@@ -7,28 +7,28 @@ import {
   fetchDriverHosStats,
   fetchDriverTrips,
   updateTrip
-  
+
 } from "../../api/endPoints";
 import { calculateMilesForDate, getHOSDurationsForDate, getLatestStatusForDriver } from "../../utils/helpers";
 import HOSRecapPanel from "./ELD/HOSRecapPanel";
 import MapView from "./maps/MapView";
-import { statusMap } from "../../utils/helpers"; 
+import { statusMap } from "../../utils/helpers";
 import StatusToggle from "./ELD/StatusToggle";
 import { toast } from "react-toastify";
 
 const DriverHomePage = () => {
   const dispatch = useDispatch();
-  const navigate =useNavigate();
+  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10));
 
   // Redux state selectors
-   const { user, status } = useSelector((state) => state.auth);
+  const { user, status } = useSelector((state) => state.auth);
   const driverId = useSelector((state) => state.auth?.user?.driver_profile_id);
   const logs = useSelector((state) => state.eldLogs?.driverEldLogs?.data || []);
   const hosStats = useSelector((state) => state.drivers?.hosStats ?? []);
   const trips = useSelector((state) => state.trips?.trips || []);
   const currentTrip = trips?.find((trip) => trip.status === "in_progress");
-  const miles=calculateMilesForDate(selectedDate, trips)
+  const miles = calculateMilesForDate(selectedDate, trips)
 
 
   const [latestMiles, setLatestMiles] = useState(0);
@@ -37,12 +37,12 @@ const DriverHomePage = () => {
     if (driverId) {
       dispatch(fetchELDLogsByDriver({ driverId: driverId, date: selectedDate }));
       dispatch(fetchDriverHosStats({ driverId: driverId, date: selectedDate }));
-    
-      dispatch(fetchDriverTrips(driverId ));
+
+      dispatch(fetchDriverTrips(driverId));
     }
   }, [driverId, selectedDate, dispatch]);
   const driver = {
-    driverId:user?.driver_profile_id,
+    driverId: user?.driver_profile_id,
     name: user?.first_name,
     coDriver: "None",
     truckNumber: "#1023",
@@ -54,20 +54,20 @@ const DriverHomePage = () => {
   const todayDurations = logs?.length
     ? getHOSDurationsForDate(logs, selectedDate)
     : {
-        totalOnDuty: 0,
-        totalDriving: 0,
-        totalOffDuty: 0,
-        totalSleeperBerth: 0,
-      };
+      totalOnDuty: 0,
+      totalDriving: 0,
+      totalOffDuty: 0,
+      totalSleeperBerth: 0,
+    };
 
-      const sortedLogs = [...logs].sort(
-        (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
-      );
-      
-      
-      const latestLog = sortedLogs[sortedLogs.length - 1];
-     const currentStatus = latestLog?.hos_status || "off_duty"
-  // const currentStatus = getLatestStatusForDriver(logs, selectedDate, driver.id);
+  const sortedLogs = [...logs].sort(
+    (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
+  );
+
+
+  const latestLog = sortedLogs[sortedLogs.length - 1];
+  const currentStatus = latestLog?.hos_status || "off_duty"
+
   const nextTrip = trips?.find((trip) => trip.status === "scheduled");
   const handleStartTrip = async (tripId) => {
     try {
@@ -100,28 +100,28 @@ const DriverHomePage = () => {
           <p><strong>Commodity:</strong> XYZ Freight - Electronics</p>
         </Section>
         {nextTrip && (
-  <Section>
-    <h3>📅 Next Scheduled Trip</h3>
-    <p><strong>From:</strong> {nextTrip.start_location}</p>
-    <p><strong>To:</strong> {nextTrip.destination_location}</p>
-    <p><strong>Start:</strong> {new Date(nextTrip.start_time).toLocaleString()}</p>
-    <Button onClick={() => handleStartTrip(nextTrip.id)}
-    disabled={nextTrip.status !== "scheduled"}
-      >Start Trip</Button>
-  </Section>
-)}
+          <Section>
+            <h3>📅 Next Scheduled Trip</h3>
+            <p><strong>From:</strong> {nextTrip.start_location}</p>
+            <p><strong>To:</strong> {nextTrip.destination_location}</p>
+            <p><strong>Start:</strong> {new Date(nextTrip.start_time).toLocaleString()}</p>
+            <Button onClick={() => handleStartTrip(nextTrip.id)}
+              disabled={nextTrip.status !== "scheduled"}
+            >Start Trip</Button>
+          </Section>
+        )}
 
       </LeftPanel>
 
       <MainSection>
-      <Section>
-  {/* <h3>🚦 Change Status</h3> */}
-  {/* <StatusToggle
+        <Section>
+          {/* <h3>🚦 Change Status</h3> */}
+          {/* <StatusToggle
     onStatusChange={handleStatusChange}
     activeStatus={currentStatus}
     hosStats={hosStats}
   /> */}
-</Section>
+        </Section>
 
         <Header>
           <h2>👋 Hello, {driver?.name?.split(" ")[0] || "Driver"}!</h2>
@@ -140,8 +140,8 @@ const DriverHomePage = () => {
         </AlertBox>
 
         <Section>
-         
-         
+
+
         </Section>
 
         {currentTrip && (
@@ -149,20 +149,20 @@ const DriverHomePage = () => {
             <h3>📍 Location Map</h3>
 
             <MapContainer>
-            <MapView selectedTrip={currentTrip} />
+              <MapView selectedTrip={currentTrip} />
             </MapContainer>
-            
+
           </Section>
         )}
       </MainSection>
       <RightPanel>
-      <HOSRecapPanel
-            hosStats={hosStats}
-            todayDurations={todayDurations}
-            driver={driver}
-            filteredLogs={logs}
-            totalMiles={miles}
-          />
+        <HOSRecapPanel
+          hosStats={hosStats}
+          todayDurations={todayDurations}
+          driver={driver}
+          filteredLogs={logs}
+          totalMiles={miles}
+        />
 
       </RightPanel>
     </Container>

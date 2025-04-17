@@ -54,7 +54,7 @@ const GraphContainer = styled.div`
   margin-bottom: 40px;
   background: #ddd;
   height: 200px;
-  width: 100%; /* Adjust the width to fit within the MainSection */
+  width: 100%; 
   display: flex;
   align-items: center;
   justify-content: center;

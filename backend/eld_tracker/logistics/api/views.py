@@ -276,7 +276,7 @@ class ELDLogListCreateAPIView(APIView):
         #  Filtering logic
         if driver_id:
             driver = get_object_or_error(DriverProfile, id=driver_id)
-            logs_qs = ELDLog.objects.filter(driver=driver).order_by("-timestamp")
+            logs_qs = ELDLog.objects.filter(driver=driver)
 
         elif trip_id:
             trip = get_object_or_error(Trip, id=trip_id)

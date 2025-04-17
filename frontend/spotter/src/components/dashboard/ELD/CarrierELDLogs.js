@@ -8,123 +8,7 @@ import HOSRecapPanel from "./HOSRecapPanel";
 import PrintableELDLog from "./ELDdocument";
 import { transformLogData, getHOSDurationsForDate, formatMinutes, calculateMilesForDate, getLatestStatusForDriver } from "../../../utils/helpers";
 
-// const CarrierELDLogsView = () => {
-//   const dispatch = useDispatch();
 
-//   useEffect(() => {
-    
-//     dispatch(fetchDrivers());
-    
-//   }, [dispatch]);
-
-//   const { user } = useSelector((state) => state.auth);
-//   const drivers = useSelector((state) => state.drivers?.drivers?.data ?? []);
-//   const logs = useSelector((state) => state.eldLogs?.eldLogs?.data ?? []);
-//   const trips = useSelector((state) => state.trips?.trips ?? []);
-//   const hosStats = useSelector((state) => state.drivers?.hosStats ?? {});
-
-//   const [selectedDriverId, setSelectedDriverId] = useState(null);
-//   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10));
-//   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
-  
-//   const [latestMiles, setLatestMiles] = useState(0);
-
-//   const selectedDriver = drivers?.find((d) => d.id === selectedDriverId);
-
-//   useEffect(() => {
-//     if (selectedDriverId && selectedDate) {
-//       dispatch(fetchELDLogsByDriver({ driverId: selectedDriverId, date: selectedDate }));
-//       dispatch(fetchDriverHosStats( {driverId: selectedDriverId, date: selectedDate }));
-//     }
-//   }, [selectedDriverId, selectedDate, dispatch]);
-  
-//   const filteredLogs = logs?.filter(log=> log.driver===selectedDriverId);
-//   const driverTrips=trips.filter(trip=> trip.driver ===selectedDriverId );
-//   const miles=calculateMilesForDate(selectedDate, driverTrips);
-
-// //  console.log("Calling getLatestStatusForDriver...");
-// //   const currentStatus = useMemo(() => (
-// //     getLatestStatusForDriver(filteredLogs, selectedDate, selectedDriverId)
-  
-// //   ), [filteredLogs, selectedDate, selectedDriverId]);
- 
-
-  // const transformedData = transformLogData(filteredLogs);
-  // const todayDurations = getHOSDurationsForDate(filteredLogs, selectedDate);
-
-//   const driver = {
-//     name: selectedDriver?.user?.first_name,
-//     coDriver: "None",
-//     truckNumber: selectedDriver?.truck_data?.truck_number,
-//     carrier: selectedDriver?.carrier_data?.name,
-//     carrierAddress: selectedDriver?.carrier_data?.address,
-//     totalMiles: latestMiles
-//   };
-
-//   return (
-//     <Container>
-//       <Sidebar>
-//         <h3>👥 Drivers</h3>
-//         {drivers.map((driver) => (
-//           <DriverCard
-//             key={driver.id}
-//             driver={driver}
-//             isSelected={driver.id === selectedDriverId}
-//             currentStatus={getLatestStatusForDriver(filteredLogs, selectedDate, driver.id)}
-//             onSelect={() => setSelectedDriverId(driver.id)}
-           
-//           />
-//         ))}
-//       </Sidebar>
-
-//       <MainSection>
-//         <Header>
-//           <h2>📄 ELD Logs - Carrier View</h2>
-//           <Controls>
-//             <DatePicker
-//               type="date"
-//               value={selectedDate}
-//               onChange={(e) => setSelectedDate(e.target.value)}
-//             />
-//             {selectedDriver && (
-//               <DownloadButton onClick={() => setIsPrintModalOpen(true)}>
-//                 📥 View/Print
-//               </DownloadButton>
-//             )}
-//           </Controls>
-//         </Header>
-
-//         {selectedDriver ? (
-//           <CarrierGraphPanel
-//             logs={filteredLogs}
-//             transformedData={transformedData}
-//             driver={driver}
-           
-//             selectedDate={selectedDate}
-//           />
-//         ) : (
-//           <NoDriverSelected>Please select a driver to view logs.</NoDriverSelected>
-//         )}
-//       </MainSection>
-
-//       <RightPanel>
-//         <HOSRecapPanel hosStats={hosStats} totalMiles={miles} todayDurations={todayDurations} driver={driver} filteredLogs={filteredLogs} />
-//       </RightPanel>
-
-//       {isPrintModalOpen && selectedDriver && (
-//         <PrintableELDLog
-//           driver={driver}
-//           logs={filteredLogs}
-//           todayDurations={todayDurations}
-//           selectedDate={selectedDate}
-//           hosStats={hosStats}
-//           totalMiles={miles}
-//           onClose={() => setIsPrintModalOpen(false)}
-//         />
-//       )}
-//     </Container>
-//   );
-// };
 const CarrierELDLogsView = () => {
   const dispatch = useDispatch();
 
@@ -135,6 +19,7 @@ const CarrierELDLogsView = () => {
   const { user } = useSelector((state) => state.auth);
   const drivers = useSelector((state) => state.drivers?.drivers?.data ?? []);
   const logs = useSelector((state) => state.eldLogs?.eldLogs?.data ?? []);
+  const driverLogs=useSelector((state) => state.eldLogs?.driverEldLogs?.data ?? []);
   const trips = useSelector((state) => state.trips?.trips ?? []);
   const hosStats = useSelector((state) => state.drivers?.hosStats ?? {});
 
@@ -146,13 +31,13 @@ const CarrierELDLogsView = () => {
 
   useEffect(() => {
     if (selectedDriverId && selectedDate) {
-      dispatch(fetchELDLogs())
-      // dispatch(fetchELDLogsByDriver({ driverId: selectedDriverId, date: selectedDate }));
+      // dispatch(fetchELDLogs())
+      dispatch(fetchELDLogsByDriver({ driverId: selectedDriverId, date: selectedDate }));
       dispatch(fetchDriverHosStats({ driverId: selectedDriverId, date: selectedDate }));
     }
   }, [selectedDriverId, selectedDate, dispatch]);
 
-  const filteredLogs = logs?.filter(log => log.driver === selectedDriverId);
+  const filteredLogs = driverLogs?.filter(log => log.driver === selectedDriverId);
   const driverTrips = trips.filter(trip => trip.driver === selectedDriverId);
   const miles = calculateMilesForDate(selectedDate, driverTrips);
 
@@ -171,8 +56,8 @@ const CarrierELDLogsView = () => {
   };
   // For each driver, calculate the status based on the logs
   const driverStatus = drivers?.map(driver => {
-    const logsForDriver = logs.filter(log => log.driver === driver.id);
-    const currentStatus = getLatestStatusForDriver(logsForDriver, selectedDate, driver.id);
+  
+    const currentStatus = getLatestStatusForDriver(driverLogs, selectedDate, driver.id);
     return {
       driverId: driver.id,
       status: currentStatus,
@@ -219,6 +104,7 @@ const CarrierELDLogsView = () => {
 
         {selectedDriver ? (
           <CarrierGraphPanel
+         
             logs={filteredLogs}
             driver={driver}
             selectedDate={selectedDate}
