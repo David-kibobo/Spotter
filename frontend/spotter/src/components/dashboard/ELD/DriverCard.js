@@ -1,16 +1,26 @@
 import React from "react";
 import styled from "styled-components";
 import { statusMap } from "../../../utils/helpers";
+import { useEffect, useState } from "react";
 
 
 
-const DriverCard = ({ driver, onSelect, isSelected, currentStatus }) => (
-  <Card onClick={onSelect} selected={isSelected}>
+const DriverCard = ({ driver, onSelect, isSelected, selectedDate, currentStatus }) => {
+
+
+
+
+  return (
+
+    <Card onClick={onSelect} selected={isSelected}>
     <p><strong>{driver.user?.first_name}</strong></p>
     <p>Truck #{driver.truck_data?.truck_number}</p>
     <p>Status: {statusMap[currentStatus]}</p>
   </Card>
-);
+  )
+
+  
+};
 
 export default DriverCard;
 

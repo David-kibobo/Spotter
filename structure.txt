@@ -1,0 +1,31 @@
+.
+├── backend
+│   ├── eld_tracker
+│   │   ├── eld_tracker
+│   │   ├── logistics
+│   │   ├── manage.py
+│   │   ├── staticfiles
+│   │   ├── trucks
+│   │   ├── users
+│   │   └── utils
+│   ├── requirements.txt
+│   └── venv
+│       ├── bin
+│       ├── include
+│       ├── lib
+│       ├── lib64 -> lib
+│       ├── pyvenv.cfg
+│       └── share
+├── deploy_oracle.sh
+├── frontend
+│   └── spotter
+│       ├── node_modules
+│       ├── package.json
+│       ├── package-lock.json
+│       ├── public
+│       ├── README.md
+│       └── src
+├── README.md
+└── structure.txt
+
+19 directories, 9 files

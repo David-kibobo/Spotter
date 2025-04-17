@@ -96,9 +96,12 @@ export const fetchDriverHosStats = createAsyncThunk(
   "drivers/fetchHosStats",
   async ({ driverId, date }, { rejectWithValue }) => {
     try {
+      // Get browser timezone
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
       const url = date
-        ? `api/logistics/hos/stats/${driverId}/?date=${date}`
-        : `api/logistics/hos/stats/${driverId}/`;
+        ? `api/logistics/hos/stats/${driverId}/?date=${date}&tz=${encodeURIComponent(timezone)}`
+        : `api/logistics/hos/stats/${driverId}/?tz=${encodeURIComponent(timezone)}`;
 
       const response = await API.get(url);
       return response.data.data;

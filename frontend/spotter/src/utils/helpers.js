@@ -18,7 +18,7 @@ export const reverseGeocode = async (lat, lon) => {
 // Format date in a readable way
 export const formatDate = (date) => {
   return new Date(date).toLocaleDateString("en-US", {
-    year: "numeric",
+    // year: "numeric",
     month: "short",
     day: "numeric",
   });
@@ -90,7 +90,8 @@ export function transformLogData(logs) {
 
   for (let i = 0; i < logs.length; i++) {
     const log = logs[i];
-
+    const timestamp = new Date(log.timestamp);
+    const date = formatDate(timestamp); 
     const time = formatTime(log.timestamp);
     const status = statusMap[log.hos_status] || "⚪ Off-Duty";
     const remarks = log.remarks || "No remarks";
@@ -108,6 +109,8 @@ export function transformLogData(logs) {
 
     transformedLogs.push({
       time,
+      date,      
+      timestamp, 
       status,
       duration,
       remarks
@@ -220,7 +223,7 @@ export function getHOSDurationsForDate(logs, selectedDate) {
     if (diffMs <= 0) return;
 
     const diffMins = Math.floor(diffMs / 60000);
-    console.log(`Status: ${log.hos_status}, Start: ${adjustedStart}, End: ${adjustedEnd}, Duration: ${diffMins} mins`);
+    
 
     switch (log.hos_status) {
       case 'driving':
@@ -240,7 +243,7 @@ export function getHOSDurationsForDate(logs, selectedDate) {
     }
   });
 
-  console.log("Result for this day:", result);
+ 
   return result;
 }
 
@@ -252,6 +255,41 @@ export function formatMinutes(mins) {
   return `${hours}h ${minutes}m`;
 }
 
-// Function to handle dashboard permissions and views
-export const hasRole = (user, allowedRoles) =>
-  user && allowedRoles.includes(user.role);
+// Function to calcuate distance covered for a particular day
+export const calculateMilesForDate = (date, trips) => {
+  const targetDate = new Date(date).toISOString().slice(0, 10);
+
+  const filteredTrips = trips.filter((trip) => {
+    const tripDate = new Date(trip.start_time).toISOString().slice(0, 10);
+    return (
+      tripDate === targetDate &&
+      (trip.status === "in_progress" || trip.status === "completed")
+    );
+  });
+
+  const totalMiles = filteredTrips.reduce(
+    (sum, trip) => sum + parseFloat(trip.actual_distance || 0),
+    0
+  );
+
+  const roundedMiles = parseFloat(totalMiles.toFixed(2));
+  return roundedMiles;
+};
+
+// utils/eld.js
+export const getLatestStatusForDriver = (logs, selectedDate, driverId) => {
+  const logsForDate = logs.filter(log => {
+    const logDate = new Date(log.timestamp).toISOString().split("T")[0];
+    return logDate === selectedDate && log.driver === driverId;
+  });
+
+  if (logsForDate.length > 0) {
+    const latestLog = [...logsForDate].sort(
+      (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+    )[0];
+
+    return latestLog.hos_status;
+  }
+
+  return "off_duty";
+};

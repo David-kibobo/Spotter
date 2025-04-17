@@ -5,6 +5,7 @@ const eldLogsSlice = createSlice({
   name: "eldLogs",
   initialState: {
     eldLogs: [],
+    driverEldLogs: [],
     loading: false,
     error: null,
   },
@@ -36,7 +37,7 @@ const eldLogsSlice = createSlice({
       })
       .addCase(fetchELDLogsByDriver.fulfilled, (state, action) => {
         state.loading = false;
-        state.eldLogs = action.payload;
+        state.driverEldLogs = action.payload;
         state.error = null; // Clear any previous error on success
       })
       .addCase(fetchELDLogsByDriver.rejected, (state, action) => {

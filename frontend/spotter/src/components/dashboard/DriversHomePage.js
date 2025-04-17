@@ -9,7 +9,7 @@ import {
   updateTrip
   
 } from "../../api/endPoints";
-import { getHOSDurationsForDate } from "../../utils/helpers";
+import { calculateMilesForDate, getHOSDurationsForDate, getLatestStatusForDriver } from "../../utils/helpers";
 import HOSRecapPanel from "./ELD/HOSRecapPanel";
 import MapView from "./maps/MapView";
 import { statusMap } from "../../utils/helpers"; 
@@ -24,10 +24,11 @@ const DriverHomePage = () => {
   // Redux state selectors
    const { user, status } = useSelector((state) => state.auth);
   const driverId = useSelector((state) => state.auth?.user?.driver_profile_id);
-  const logs = useSelector((state) => state.eldLogs?.eldLogs?.data || []);
+  const logs = useSelector((state) => state.eldLogs?.driverEldLogs?.data || []);
   const hosStats = useSelector((state) => state.drivers?.hosStats ?? []);
   const trips = useSelector((state) => state.trips?.trips || []);
   const currentTrip = trips?.find((trip) => trip.status === "in_progress");
+  const miles=calculateMilesForDate(selectedDate, trips)
 
 
   const [latestMiles, setLatestMiles] = useState(0);
@@ -59,7 +60,14 @@ const DriverHomePage = () => {
         totalSleeperBerth: 0,
       };
 
-  const currentStatus = logs?.[logs.length - 1]?.hos_status || "off_duty";
+      const sortedLogs = [...logs].sort(
+        (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
+      );
+      
+      
+      const latestLog = sortedLogs[sortedLogs.length - 1];
+     const currentStatus = latestLog?.hos_status || "off_duty"
+  // const currentStatus = getLatestStatusForDriver(logs, selectedDate, driver.id);
   const nextTrip = trips?.find((trip) => trip.status === "scheduled");
   const handleStartTrip = async (tripId) => {
     try {
@@ -83,7 +91,7 @@ const DriverHomePage = () => {
           <p><strong>Carrier:</strong> {driver?.carrier}</p>
           <p><strong>Carrier Address:</strong> {driver?.carrierAddress}</p>
           <p><strong>Current Status:</strong> {statusMap[currentStatus]}</p>
-          <p><strong>Total Miles Today:</strong> {hosStats?.totalMiles || 0} mi</p>
+          <p><strong>Total Miles Today:</strong> {miles || 0} mi</p>
         </Section>
 
         <Section>
@@ -153,6 +161,7 @@ const DriverHomePage = () => {
             todayDurations={todayDurations}
             driver={driver}
             filteredLogs={logs}
+            totalMiles={miles}
           />
 
       </RightPanel>

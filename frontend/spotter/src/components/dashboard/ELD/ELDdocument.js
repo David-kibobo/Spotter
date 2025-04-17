@@ -6,7 +6,7 @@ import jsPDF from 'jspdf';
 import { transformLogData, formatMinutes } from '../../../utils/helpers';
 import ELDGraph from './ELDGraph';
 
-const PrintableELDLog = ({ driver, logs, onClose, hosStats, todayDurations, selectedDate }) => {
+const PrintableELDLog = ({ driver, logs, onClose, hosStats, totalMiles, todayDurations, selectedDate }) => {
   const printRef = useRef();
 
 const {total_hours_past_8_days, available_hours_tomorrow}=hosStats;
@@ -34,7 +34,7 @@ const {total_hours_past_8_days, available_hours_tomorrow}=hosStats;
           <Header>
               <h1>Driver’s Daily Log</h1>
               <p><strong>Driver:</strong> {driver.name} | <strong>Co-Driver:</strong> {driver.coDriver || "N/A"}</p>
-              <p><strong>Truck:</strong> {driver.truckNumber} | <strong>Miles Driven:</strong> {driver.totalMiles} mi</p>
+              <p><strong>Truck:</strong> {driver.truckNumber} | <strong>Miles Driven:</strong> {totalMiles} mi</p>
               <p><strong>Carrier:</strong> {driver.carrier}</p>
               <p><strong>Carrier’s Office:</strong> {driver?.carrierAddress}</p>
               <p><strong>Date:</strong> {selectedDate}</p>
@@ -59,7 +59,7 @@ const {total_hours_past_8_days, available_hours_tomorrow}=hosStats;
                 <tbody>
                   {transformedData.map((log, index) => (
                     <tr key={index}>
-                      <td>{log.time}</td>
+                       <td> {log.date} - {log.time}</td>
                       <td>{log.status}</td>
                       <td>{log.duration} min</td>
                       <td>{log.remarks || "N/A"}</td>

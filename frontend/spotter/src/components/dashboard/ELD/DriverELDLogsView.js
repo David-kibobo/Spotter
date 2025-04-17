@@ -6,31 +6,33 @@ import PrintableELDLog from "./ELDdocument";
 import StatusToggle from "./StatusToggle";
 import { useDispatch } from "react-redux";
 import { fetchELDLogsByDriver, fetchDriverHosStats } from "../../../api/endPoints";
-import { transformLogData, getHOSDurationsForDate, formatMinutes, statusMap } from "../../../utils/helpers";
+import { transformLogData, getHOSDurationsForDate, formatMinutes, calculateMilesForDate, statusMap, get } from "../../../utils/helpers";
 import HOSRecapPanel from "./HOSRecapPanel";
 
 
-const ELDLogsView = ({ driver, logs, currentStatus, trips, setIsPrintModalOpen, isPrintModalOpen, hosStats }) => {
+
+const ELDLogsView = ({ driver, logs, currentStatus, trips, setIsPrintModalOpen,  isPrintModalOpen, hosStats }) => {
   const dispatch = useDispatch();
 
   const [selectedTripId, setSelectedTripId] = useState("");
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [latestMiles, setLatestMiles] = useState(0);
 
-  console.log("TRips", logs)
+  
   useEffect(() => {
     if (selectedDate) {
       dispatch(fetchELDLogsByDriver({ driverId: driver.driverId, date: selectedDate }));
       dispatch(fetchDriverHosStats({ driverId: driver.driverId, date: selectedDate }));
     }
-  }, [selectedDate, dispatch]);
+  }, [selectedDate, dispatch, driver.driverId]);
 
   const filteredLogs = logs;
 
 
   const transformedData = transformLogData(logs);
   const todayDurations = getHOSDurationsForDate(filteredLogs, selectedDate);
-
+  const miles = calculateMilesForDate(selectedDate, trips);
+console.log('Miles', miles)
   return (
     <Container>
       <LeftPanel>
@@ -43,7 +45,7 @@ const ELDLogsView = ({ driver, logs, currentStatus, trips, setIsPrintModalOpen, 
           <p><strong>📍 Current Status:</strong> {statusMap[currentStatus]}</p>
           <p><strong>🏢 Carrier:</strong> {driver?.carrier}</p>
           <p><strong>📍 Carrier Address:</strong> {driver?.carrierAddress}</p>
-          <p><strong>🛣️ Total Miles Today:</strong> {driver?.totalMiles} mi</p>
+          <p><strong>🛣️ Total Miles Today:</strong> {miles} mi</p>
         </div>
         <ShippingSection>
           <h3>📦 Shipping Info</h3>
@@ -55,12 +57,15 @@ const ELDLogsView = ({ driver, logs, currentStatus, trips, setIsPrintModalOpen, 
       <MainSection>
         <Header>
           <h2 style={{ marginTop: "5px" }}>📄 ELD Logs</h2>
+          <Controls>
           <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap", marginBottom: "50px" }}>
            
 
-            <DatePicker type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
-            <DownloadButton onClick={() => setIsPrintModalOpen(true)}>📥 View/Print</DownloadButton>
-          </div>
+           <DatePicker type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
+           <DownloadButton onClick={() => setIsPrintModalOpen(true)}>📥 View/Print</DownloadButton>
+         </div>
+          </Controls>
+         
         </Header>
 
         <GraphContainer>
@@ -83,7 +88,7 @@ const ELDLogsView = ({ driver, logs, currentStatus, trips, setIsPrintModalOpen, 
             <tbody>
               {transformedData.map((log, index) => (
                 <tr key={index}>
-                  <td>{log.time}</td>
+                  <td>{log.date}-{log.time}</td>
                   <td>{log.status}</td>
                   <td>{log.duration} min</td>
                   <td>{log.remarks || "N/A"}</td>
@@ -96,12 +101,12 @@ const ELDLogsView = ({ driver, logs, currentStatus, trips, setIsPrintModalOpen, 
       </MainSection>
 
       <RightPanel>
-        <HOSRecapPanel hosStats={hosStats} todayDurations={todayDurations} driver={driver} filteredLogs={filteredLogs} />
+        <HOSRecapPanel hosStats={hosStats} totalMiles={miles} todayDurations={todayDurations} driver={driver} filteredLogs={filteredLogs} />
 
       </RightPanel>
 
       {isPrintModalOpen && (
-        <PrintableELDLog driver={driver} logs={filteredLogs} todayDurations={todayDurations} selectedDate={selectedDate} hosStats={hosStats} onClose={() => setIsPrintModalOpen(false)} />
+        <PrintableELDLog driver={driver} totalMiles={miles} logs={filteredLogs} todayDurations={todayDurations} selectedDate={selectedDate} hosStats={hosStats} onClose={() => setIsPrintModalOpen(false)} />
       )}
     </Container>
   );
@@ -189,11 +194,15 @@ const Header = styled.div`
   width: 100%;
 
   @media (min-width: 768px) {
-    flex-direction: row;
+    flex-direction: column;
     align-items: flex-start;
   }
 `;
-
+const Controls= styled.div`
+display : flex;
+gap: 10px;
+margin-bottom: 20px;
+`
 const DatePicker = styled.input`
   padding: 5px;
   border-radius: 5px;
@@ -277,3 +286,6 @@ const Warning = styled.p`
   font-weight: bold;
   margin-top: 10px;
 `;
+
+
+

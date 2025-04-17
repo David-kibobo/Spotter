@@ -21,13 +21,16 @@ const CarrierHomePage = () => {
 
 
 // Transforming logs data to our desired form for presentation
+
 const displayLogs = logsToday?.map((log) => ({
   id: log.id,
   driver: `${log.driver_name || "Unknown"}`,
-  time: format(new Date(log.timestamp), "hh:mm a"),
+  // 👉 Format: Apr 17, 02:30 PM
+  time: format(new Date(log.timestamp), "MMM d, hh:mm a"),
   status: statusMap[log.hos_status] || log.hos_status,
   location: log.location_name || "Unknown Location",
 }));
+
 
   useEffect(() => {
     dispatch(fetchELDLogs());

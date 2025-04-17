@@ -3,11 +3,11 @@ import styled from "styled-components";
 import { formatMinutes } from "../../../utils/helpers";
 import { getEightHourDrivingStatus } from "../../../utils/helpers";
 
-const HOSRecapPanel = ({ hosStats, todayDurations, driver, filteredLogs }) => {
+const HOSRecapPanel = ({ hosStats, todayDurations, driver, filteredLogs, totalMiles }) => {
   const drivingStatus = getEightHourDrivingStatus(filteredLogs ?? []);
 
 
-  const { total_hours_past_8_days, available_hours_tomorrow, totalMiles } = hosStats;
+  const { total_hours_past_8_days, available_hours_tomorrow } = hosStats;
 
   return (
 
@@ -20,7 +20,7 @@ const HOSRecapPanel = ({ hosStats, todayDurations, driver, filteredLogs }) => {
       <p><strong>📅 Last 7 Days:</strong> {total_hours_past_8_days}h</p>
       <p><strong>⏳ Available Tomorrow:</strong> {available_hours_tomorrow}h</p>
       {/* <p><strong>🦄 Total Miles Covered:</strong> {hosStats.totalMiles ?? 0} mi</p> */}
-      <p><strong>🛣️ Total Miles Covered:</strong> {driver.totalMiles} mi</p>
+      <p><strong>🛣️ Total Miles Covered:</strong> {totalMiles} mi</p>
 
 
       {/* Show warning when approaching 8-hour driving limit */}

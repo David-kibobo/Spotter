@@ -2,19 +2,134 @@ import React, { useState, useMemo, useEffect } from "react";
 import styled from "styled-components";
 import DriverCard from "./DriverCard";
 import { useSelector, useDispatch } from "react-redux";
-import { fetchELDLogsByDriver, fetchDrivers, fetchDriverHosStats } from "../../../api/endPoints";
+import { fetchELDLogsByDriver, fetchDrivers, fetchDriverHosStats, fetchELDLogs } from "../../../api/endPoints";
 import CarrierGraphPanel from "./CarrierGraphPanel";
 import HOSRecapPanel from "./HOSRecapPanel";
 import PrintableELDLog from "./ELDdocument";
-import { transformLogData, getHOSDurationsForDate, formatMinutes } from "../../../utils/helpers";
+import { transformLogData, getHOSDurationsForDate, formatMinutes, calculateMilesForDate, getLatestStatusForDriver } from "../../../utils/helpers";
 
+// const CarrierELDLogsView = () => {
+//   const dispatch = useDispatch();
+
+//   useEffect(() => {
+    
+//     dispatch(fetchDrivers());
+    
+//   }, [dispatch]);
+
+//   const { user } = useSelector((state) => state.auth);
+//   const drivers = useSelector((state) => state.drivers?.drivers?.data ?? []);
+//   const logs = useSelector((state) => state.eldLogs?.eldLogs?.data ?? []);
+//   const trips = useSelector((state) => state.trips?.trips ?? []);
+//   const hosStats = useSelector((state) => state.drivers?.hosStats ?? {});
+
+//   const [selectedDriverId, setSelectedDriverId] = useState(null);
+//   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10));
+//   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  
+//   const [latestMiles, setLatestMiles] = useState(0);
+
+//   const selectedDriver = drivers?.find((d) => d.id === selectedDriverId);
+
+//   useEffect(() => {
+//     if (selectedDriverId && selectedDate) {
+//       dispatch(fetchELDLogsByDriver({ driverId: selectedDriverId, date: selectedDate }));
+//       dispatch(fetchDriverHosStats( {driverId: selectedDriverId, date: selectedDate }));
+//     }
+//   }, [selectedDriverId, selectedDate, dispatch]);
+  
+//   const filteredLogs = logs?.filter(log=> log.driver===selectedDriverId);
+//   const driverTrips=trips.filter(trip=> trip.driver ===selectedDriverId );
+//   const miles=calculateMilesForDate(selectedDate, driverTrips);
+
+// //  console.log("Calling getLatestStatusForDriver...");
+// //   const currentStatus = useMemo(() => (
+// //     getLatestStatusForDriver(filteredLogs, selectedDate, selectedDriverId)
+  
+// //   ), [filteredLogs, selectedDate, selectedDriverId]);
+ 
+
+  // const transformedData = transformLogData(filteredLogs);
+  // const todayDurations = getHOSDurationsForDate(filteredLogs, selectedDate);
+
+//   const driver = {
+//     name: selectedDriver?.user?.first_name,
+//     coDriver: "None",
+//     truckNumber: selectedDriver?.truck_data?.truck_number,
+//     carrier: selectedDriver?.carrier_data?.name,
+//     carrierAddress: selectedDriver?.carrier_data?.address,
+//     totalMiles: latestMiles
+//   };
+
+//   return (
+//     <Container>
+//       <Sidebar>
+//         <h3>👥 Drivers</h3>
+//         {drivers.map((driver) => (
+//           <DriverCard
+//             key={driver.id}
+//             driver={driver}
+//             isSelected={driver.id === selectedDriverId}
+//             currentStatus={getLatestStatusForDriver(filteredLogs, selectedDate, driver.id)}
+//             onSelect={() => setSelectedDriverId(driver.id)}
+           
+//           />
+//         ))}
+//       </Sidebar>
+
+//       <MainSection>
+//         <Header>
+//           <h2>📄 ELD Logs - Carrier View</h2>
+//           <Controls>
+//             <DatePicker
+//               type="date"
+//               value={selectedDate}
+//               onChange={(e) => setSelectedDate(e.target.value)}
+//             />
+//             {selectedDriver && (
+//               <DownloadButton onClick={() => setIsPrintModalOpen(true)}>
+//                 📥 View/Print
+//               </DownloadButton>
+//             )}
+//           </Controls>
+//         </Header>
+
+//         {selectedDriver ? (
+//           <CarrierGraphPanel
+//             logs={filteredLogs}
+//             transformedData={transformedData}
+//             driver={driver}
+           
+//             selectedDate={selectedDate}
+//           />
+//         ) : (
+//           <NoDriverSelected>Please select a driver to view logs.</NoDriverSelected>
+//         )}
+//       </MainSection>
+
+//       <RightPanel>
+//         <HOSRecapPanel hosStats={hosStats} totalMiles={miles} todayDurations={todayDurations} driver={driver} filteredLogs={filteredLogs} />
+//       </RightPanel>
+
+//       {isPrintModalOpen && selectedDriver && (
+//         <PrintableELDLog
+//           driver={driver}
+//           logs={filteredLogs}
+//           todayDurations={todayDurations}
+//           selectedDate={selectedDate}
+//           hosStats={hosStats}
+//           totalMiles={miles}
+//           onClose={() => setIsPrintModalOpen(false)}
+//         />
+//       )}
+//     </Container>
+//   );
+// };
 const CarrierELDLogsView = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    
     dispatch(fetchDrivers());
-    
   }, [dispatch]);
 
   const { user } = useSelector((state) => state.auth);
@@ -26,36 +141,25 @@ const CarrierELDLogsView = () => {
   const [selectedDriverId, setSelectedDriverId] = useState(null);
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
-  const [currentStatus, setCurrentStatus] = useState("off_duty");
-  const [latestMiles, setLatestMiles] = useState(0);
 
   const selectedDriver = drivers?.find((d) => d.id === selectedDriverId);
 
   useEffect(() => {
     if (selectedDriverId && selectedDate) {
-      dispatch(fetchELDLogsByDriver({ driverId: selectedDriverId, date: selectedDate }));
-      dispatch(fetchDriverHosStats( {driverId: selectedDriverId, date: selectedDate }));
+      dispatch(fetchELDLogs())
+      // dispatch(fetchELDLogsByDriver({ driverId: selectedDriverId, date: selectedDate }));
+      dispatch(fetchDriverHosStats({ driverId: selectedDriverId, date: selectedDate }));
     }
   }, [selectedDriverId, selectedDate, dispatch]);
-  
-  const filteredLogs = logs;
 
-
-  
- 
-  useEffect(() => {
-    if (filteredLogs?.length > 0) {
-      const sortedLogs = [...filteredLogs].sort(
-        (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
-      );
-      const latestLog = sortedLogs[sortedLogs.length - 1];
-      setCurrentStatus(latestLog.hos_status || "off_duty");
-      setLatestMiles(latestLog?.distance_covered || 0);
-    }
-  }, [filteredLogs]);
+  const filteredLogs = logs?.filter(log => log.driver === selectedDriverId);
+  const driverTrips = trips.filter(trip => trip.driver === selectedDriverId);
+  const miles = calculateMilesForDate(selectedDate, driverTrips);
 
   const transformedData = transformLogData(filteredLogs);
+
   const todayDurations = getHOSDurationsForDate(filteredLogs, selectedDate);
+
 
   const driver = {
     name: selectedDriver?.user?.first_name,
@@ -63,22 +167,37 @@ const CarrierELDLogsView = () => {
     truckNumber: selectedDriver?.truck_data?.truck_number,
     carrier: selectedDriver?.carrier_data?.name,
     carrierAddress: selectedDriver?.carrier_data?.address,
-    totalMiles: latestMiles
+    
   };
+  // For each driver, calculate the status based on the logs
+  const driverStatus = drivers?.map(driver => {
+    const logsForDriver = logs.filter(log => log.driver === driver.id);
+    const currentStatus = getLatestStatusForDriver(logsForDriver, selectedDate, driver.id);
+    return {
+      driverId: driver.id,
+      status: currentStatus,
+    };
+  });
 
+  // Now, when mapping drivers to DriverCard, we pass the correct status for each driver
   return (
     <Container>
       <Sidebar>
         <h3>👥 Drivers</h3>
-        {drivers.map((driver) => (
-          <DriverCard
-            key={driver.id}
-            driver={driver}
-            isSelected={driver.id === selectedDriverId}
-            currentStatus={currentStatus}
-            onSelect={() => setSelectedDriverId(driver.id)}
-          />
-        ))}
+        {drivers.map((driver) => {
+          // Get the status for the current driver
+          const driverStatusForCurrentDriver = driverStatus.find(status => status.driverId === driver.id)?.status || "off_duty";
+
+          return (
+            <DriverCard
+              key={driver.id}
+              driver={driver}
+              isSelected={driver.id === selectedDriverId}
+              currentStatus={driverStatusForCurrentDriver}
+              onSelect={() => setSelectedDriverId(driver.id)}
+            />
+          );
+        })}
       </Sidebar>
 
       <MainSection>
@@ -101,9 +220,9 @@ const CarrierELDLogsView = () => {
         {selectedDriver ? (
           <CarrierGraphPanel
             logs={filteredLogs}
-            transformedData={transformedData}
             driver={driver}
             selectedDate={selectedDate}
+            transformedData={transformedData}
           />
         ) : (
           <NoDriverSelected>Please select a driver to view logs.</NoDriverSelected>
@@ -111,16 +230,18 @@ const CarrierELDLogsView = () => {
       </MainSection>
 
       <RightPanel>
-        <HOSRecapPanel hosStats={hosStats} todayDurations={todayDurations} driver={driver} filteredLogs={filteredLogs} />
+      <HOSRecapPanel hosStats={hosStats} totalMiles={miles} todayDurations={todayDurations} driver={driver} filteredLogs={filteredLogs} />
+      
       </RightPanel>
 
       {isPrintModalOpen && selectedDriver && (
         <PrintableELDLog
           driver={driver}
           logs={filteredLogs}
-          todayDurations={todayDurations}
           selectedDate={selectedDate}
           hosStats={hosStats}
+          totalMiles={miles}
+          todayDurations={todayDurations}
           onClose={() => setIsPrintModalOpen(false)}
         />
       )}
@@ -132,93 +253,6 @@ export default CarrierELDLogsView;
 
 
 
-// const Container = styled.div`
-//   display: flex;
-//   gap: 20px;
-//   padding: 20px;
-// `;
-
-// const Sidebar = styled.div`
-//   width: 250px;
-//   background: #2c3e50;
-//   padding: 15px;
-//   color: white;
-//   border-radius: 8px;
-//   height: 100%;
-// `;
-
-// const MainSection = styled.div`
-//   flex: 1;
-//   background: #f4f4f4;
-//   padding: 20px;
-//   border-radius: 8px;
-// `;
-
-// // const Header = styled.div`
-// //   display: flex;
-// //   justify-content: space-between;
-// //   flex-wrap: wrap;
-// // `;
-// const Header = styled.div`
-//   display: flex;
-//   justify-content: space-between;
-//   align-items: center;
-//   flex-direction: column;
-//   gap: 10px;
-//   width: 100%; /* Ensures full width for the header */
-// `;
-// const Controls= styled.div`
-// display : flex;
-// gap: 10px;
-// margin-bottom: 20px;
-
-// `
-// const DatePicker = styled.input`
-//   padding: 5px;
-//   border-radius: 5px;
-//   border: 1px solid #ccc;
-// `;
-
-// const DownloadButton = styled.button`
-//   padding: 8px 15px;
-//   background: #2c3e50;
-//   color: white;
-//   border: none;
-//   border-radius: 5px;
-//   cursor: pointer;
-//   font-size: 14px;
-//   &:hover {
-//     background: #1a252f;
-//   }
-// `;
-// const RightPanel = styled.div`
-//   width: 250px;
-//   background: #fef8e4;
-//   padding: 15px;
-//   border-radius: 8px;
-// `;
-
-// // const DatePicker = styled.input`
-// //   padding: 5px;
-// //   border-radius: 5px;
-// //   border: 1px solid #ccc;
-// // `;
-
-// // const DownloadButton = styled.button`
-// //   padding: 8px 15px;
-// //   background: #2c3e50;
-// //   color: white;
-// //   border: none;
-// //   border-radius: 5px;
-// //   cursor: pointer;
-// // `;
-
-// const NoDriverSelected = styled.div`
-//   margin-top: 50px;
-//   font-size: 18px;
-//   color: #555;
-//   text-align: center;
-// `;
 const Container = styled.div`
   display: flex;
   gap: 20px;
